@@ -1,0 +1,1404 @@
+==========================================
+Grid dimension is 48 x 48
+Launching 2359296 threads (N=2296960)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 2296960
+Transfer to GPU time: 0.000489
+Calculation time (GPU): 0.000695
+Calculation time (CPU): 0.030054
+Transfer from GPU time: 0.000407
+Freeing memory...
+==============================================
+Grid dimension is 67 x 67
+Launching 4596736 threads (N=4593920)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 4593920
+Transfer to GPU time: 0.000874
+Calculation time (GPU): 0.001318
+Calculation time (CPU): 0.060832
+Transfer from GPU time: 0.000641
+Freeing memory...
+==============================================
+Grid dimension is 83 x 83
+Launching 7054336 threads (N=6890880)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 6890880
+Transfer to GPU time: 0.001374
+Calculation time (GPU): 0.001965
+Calculation time (CPU): 0.090325
+Transfer from GPU time: 0.000856
+Freeing memory...
+==============================================
+Grid dimension is 95 x 95
+Launching 9241600 threads (N=9187840)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 9187840
+Transfer to GPU time: 0.002065
+Calculation time (GPU): 0.002607
+Calculation time (CPU): 0.121164
+Transfer from GPU time: 0.000949
+Freeing memory...
+==============================================
+Grid dimension is 106 x 106
+Launching 11505664 threads (N=11484800)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 11484800
+Transfer to GPU time: 0.002655
+Calculation time (GPU): 0.003254
+Calculation time (CPU): 0.150976
+Transfer from GPU time: 0.001054
+Freeing memory...
+==============================================
+Grid dimension is 117 x 117
+Launching 14017536 threads (N=13781760)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 13781760
+Transfer to GPU time: 0.003317
+Calculation time (GPU): 0.003916
+Calculation time (CPU): 0.180927
+Transfer from GPU time: 0.001222
+Freeing memory...
+==============================================
+Grid dimension is 126 x 126
+Launching 16257024 threads (N=16078720)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 16078720
+Transfer to GPU time: 0.003644
+Calculation time (GPU): 0.004536
+Calculation time (CPU): 0.201622
+Transfer from GPU time: 0.001448
+Freeing memory...
+==============================================
+Grid dimension is 134 x 134
+Launching 18386944 threads (N=18375680)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 18375680
+Transfer to GPU time: 0.008312
+Calculation time (GPU): 0.005178
+Calculation time (CPU): 0.229378
+Transfer from GPU time: 0.003542
+Freeing memory...
+==============================================
+Grid dimension is 143 x 143
+Launching 20939776 threads (N=20672640)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 20672640
+Transfer to GPU time: 0.009301
+Calculation time (GPU): 0.005821
+Calculation time (CPU): 0.258151
+Transfer from GPU time: 0.003945
+Freeing memory...
+==============================================
+Grid dimension is 150 x 150
+Launching 23040000 threads (N=22969600)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 22969600
+Transfer to GPU time: 0.010344
+Calculation time (GPU): 0.006467
+Calculation time (CPU): 0.286549
+Transfer from GPU time: 0.004365
+Freeing memory...
+==============================================
+Grid dimension is 158 x 158
+Launching 25563136 threads (N=25266560)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 25266560
+Transfer to GPU time: 0.011348
+Calculation time (GPU): 0.007111
+Calculation time (CPU): 0.315324
+Transfer from GPU time: 0.004816
+Freeing memory...
+==============================================
+Grid dimension is 165 x 165
+Launching 27878400 threads (N=27563520)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 27563520
+Transfer to GPU time: 0.016017
+Calculation time (GPU): 0.007765
+Calculation time (CPU): 0.348908
+Transfer from GPU time: 0.002310
+Freeing memory...
+==============================================
+Grid dimension is 171 x 171
+Launching 29942784 threads (N=29860480)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 29860480
+Transfer to GPU time: 0.006508
+Calculation time (GPU): 0.008398
+Calculation time (CPU): 0.378966
+Transfer from GPU time: 0.002474
+Freeing memory...
+==============================================
+Grid dimension is 178 x 178
+Launching 32444416 threads (N=32157440)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 32157440
+Transfer to GPU time: 0.007090
+Calculation time (GPU): 0.009039
+Calculation time (CPU): 0.408078
+Transfer from GPU time: 0.002647
+Freeing memory...
+==============================================
+Grid dimension is 184 x 184
+Launching 34668544 threads (N=34454400)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 34454400
+Transfer to GPU time: 0.007891
+Calculation time (GPU): 0.009693
+Calculation time (CPU): 0.437980
+Transfer from GPU time: 0.002854
+Freeing memory...
+==============================================
+Grid dimension is 190 x 190
+Launching 36966400 threads (N=36751360)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 36751360
+Transfer to GPU time: 0.008028
+Calculation time (GPU): 0.010329
+Calculation time (CPU): 0.467197
+Transfer from GPU time: 0.003038
+Freeing memory...
+==============================================
+Grid dimension is 196 x 196
+Launching 39337984 threads (N=39048320)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 39048320
+Transfer to GPU time: 0.008563
+Calculation time (GPU): 0.010975
+Calculation time (CPU): 0.495858
+Transfer from GPU time: 0.003242
+Freeing memory...
+==============================================
+Grid dimension is 201 x 201
+Launching 41370624 threads (N=41345280)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 41345280
+Transfer to GPU time: 0.008921
+Calculation time (GPU): 0.011613
+Calculation time (CPU): 0.525290
+Transfer from GPU time: 0.003362
+Freeing memory...
+==============================================
+Grid dimension is 207 x 207
+Launching 43877376 threads (N=43642240)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 43642240
+Transfer to GPU time: 0.009508
+Calculation time (GPU): 0.012268
+Calculation time (CPU): 0.554607
+Transfer from GPU time: 0.003539
+Freeing memory...
+==============================================
+Grid dimension is 212 x 212
+Launching 46022656 threads (N=45939200)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 45939200
+Transfer to GPU time: 0.010032
+Calculation time (GPU): 0.012902
+Calculation time (CPU): 0.584683
+Transfer from GPU time: 0.003672
+Freeing memory...
+==============================================
+Grid dimension is 218 x 218
+Launching 48664576 threads (N=48236160)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 48236160
+Transfer to GPU time: 0.010357
+Calculation time (GPU): 0.013547
+Calculation time (CPU): 0.611749
+Transfer from GPU time: 0.003860
+Freeing memory...
+==============================================
+Grid dimension is 223 x 223
+Launching 50922496 threads (N=50533120)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 50533120
+Transfer to GPU time: 0.010911
+Calculation time (GPU): 0.014197
+Calculation time (CPU): 0.641526
+Transfer from GPU time: 0.004151
+Freeing memory...
+==============================================
+Grid dimension is 228 x 228
+Launching 53231616 threads (N=52830080)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 52830080
+Transfer to GPU time: 0.011265
+Calculation time (GPU): 0.014833
+Calculation time (CPU): 0.670754
+Transfer from GPU time: 0.004203
+Freeing memory...
+==============================================
+Grid dimension is 233 x 233
+Launching 55591936 threads (N=55127040)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 55127040
+Transfer to GPU time: 0.011917
+Calculation time (GPU): 0.015476
+Calculation time (CPU): 0.701357
+Transfer from GPU time: 0.004402
+Freeing memory...
+==============================================
+Grid dimension is 237 x 237
+Launching 57517056 threads (N=57424000)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 57424000
+Transfer to GPU time: 0.012329
+Calculation time (GPU): 0.016116
+Calculation time (CPU): 0.728861
+Transfer from GPU time: 0.004560
+Freeing memory...
+==============================================
+Grid dimension is 242 x 242
+Launching 59969536 threads (N=59720960)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 59720960
+Transfer to GPU time: 0.012959
+Calculation time (GPU): 0.016760
+Calculation time (CPU): 0.772521
+Transfer from GPU time: 0.004861
+Freeing memory...
+==============================================
+Grid dimension is 247 x 247
+Launching 62473216 threads (N=62017920)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 62017920
+Transfer to GPU time: 0.013289
+Calculation time (GPU): 0.017409
+Calculation time (CPU): 0.789453
+Transfer from GPU time: 0.004942
+Freeing memory...
+==============================================
+Grid dimension is 251 x 251
+Launching 64513024 threads (N=64314880)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 64314880
+Transfer to GPU time: 0.013742
+Calculation time (GPU): 0.018048
+Calculation time (CPU): 0.817022
+Transfer from GPU time: 0.005100
+Freeing memory...
+==============================================
+Grid dimension is 256 x 256
+Launching 67108864 threads (N=66611840)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 66611840
+Transfer to GPU time: 0.014135
+Calculation time (GPU): 0.018691
+Calculation time (CPU): 0.847272
+Transfer from GPU time: 0.005267
+Freeing memory...
+==============================================
+Grid dimension is 260 x 260
+Launching 69222400 threads (N=68908800)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 68908800
+Transfer to GPU time: 0.014982
+Calculation time (GPU): 0.019331
+Calculation time (CPU): 0.876954
+Transfer from GPU time: 0.005499
+Freeing memory...
+==============================================
+Grid dimension is 264 x 264
+Launching 71368704 threads (N=71205760)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 71205760
+Transfer to GPU time: 0.015336
+Calculation time (GPU): 0.019975
+Calculation time (CPU): 0.904142
+Transfer from GPU time: 0.005687
+Freeing memory...
+==============================================
+Grid dimension is 268 x 268
+Launching 73547776 threads (N=73502720)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 73502720
+Transfer to GPU time: 0.015769
+Calculation time (GPU): 0.020628
+Calculation time (CPU): 0.969602
+Transfer from GPU time: 0.005824
+Freeing memory...
+==============================================
+Grid dimension is 273 x 273
+Launching 76317696 threads (N=75799680)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 75799680
+Transfer to GPU time: 0.016549
+Calculation time (GPU): 0.021286
+Calculation time (CPU): 0.999476
+Transfer from GPU time: 0.006133
+Freeing memory...
+==============================================
+Grid dimension is 277 x 277
+Launching 78570496 threads (N=78096640)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 78096640
+Transfer to GPU time: 0.016932
+Calculation time (GPU): 0.021906
+Calculation time (CPU): 1.029771
+Transfer from GPU time: 0.006322
+Freeing memory...
+==============================================
+Grid dimension is 281 x 281
+Launching 80856064 threads (N=80393600)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 80393600
+Transfer to GPU time: 0.017447
+Calculation time (GPU): 0.022548
+Calculation time (CPU): 1.057985
+Transfer from GPU time: 0.006413
+Freeing memory...
+==============================================
+Grid dimension is 285 x 285
+Launching 83174400 threads (N=82690560)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 82690560
+Transfer to GPU time: 0.017900
+Calculation time (GPU): 0.023194
+Calculation time (CPU): 1.090254
+Transfer from GPU time: 0.006597
+Freeing memory...
+==============================================
+Grid dimension is 289 x 289
+Launching 85525504 threads (N=84987520)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 84987520
+Transfer to GPU time: 0.018405
+Calculation time (GPU): 0.023837
+Calculation time (CPU): 1.093465
+Transfer from GPU time: 0.006873
+Freeing memory...
+==============================================
+Grid dimension is 292 x 292
+Launching 87310336 threads (N=87284480)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 87284480
+Transfer to GPU time: 0.018688
+Calculation time (GPU): 0.024481
+Calculation time (CPU): 1.107661
+Transfer from GPU time: 0.006975
+Freeing memory...
+==============================================
+Grid dimension is 296 x 296
+Launching 89718784 threads (N=89581440)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 89581440
+Transfer to GPU time: 0.018991
+Calculation time (GPU): 0.025128
+Calculation time (CPU): 1.137535
+Transfer from GPU time: 0.007096
+Freeing memory...
+==============================================
+Grid dimension is 300 x 300
+Launching 92160000 threads (N=91878400)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 91878400
+Transfer to GPU time: 0.019634
+Calculation time (GPU): 0.025763
+Calculation time (CPU): 1.167827
+Transfer from GPU time: 0.007373
+Freeing memory...
+==============================================
+Grid dimension is 304 x 304
+Launching 94633984 threads (N=94175360)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 94175360
+Transfer to GPU time: 0.020535
+Calculation time (GPU): 0.026414
+Calculation time (CPU): 1.240621
+Transfer from GPU time: 0.007619
+Freeing memory...
+==============================================
+Grid dimension is 307 x 307
+Launching 96510976 threads (N=96472320)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 96472320
+Transfer to GPU time: 0.020779
+Calculation time (GPU): 0.027051
+Calculation time (CPU): 1.269228
+Transfer from GPU time: 0.007591
+Freeing memory...
+==============================================
+Grid dimension is 311 x 311
+Launching 99042304 threads (N=98769280)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 98769280
+Transfer to GPU time: 0.043921
+Calculation time (GPU): 0.027690
+Calculation time (CPU): 1.233945
+Transfer from GPU time: 0.018596
+Freeing memory...
+==============================================
+Grid dimension is 315 x 315
+Launching 101606400 threads (N=101066240)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 101066240
+Transfer to GPU time: 0.044938
+Calculation time (GPU): 0.028329
+Calculation time (CPU): 1.260483
+Transfer from GPU time: 0.018989
+Freeing memory...
+==============================================
+Grid dimension is 318 x 318
+Launching 103550976 threads (N=103363200)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 103363200
+Transfer to GPU time: 0.045999
+Calculation time (GPU): 0.028975
+Calculation time (CPU): 1.291094
+Transfer from GPU time: 0.019418
+Freeing memory...
+==============================================
+Grid dimension is 322 x 322
+Launching 106172416 threads (N=105660160)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 105660160
+Transfer to GPU time: 0.048148
+Calculation time (GPU): 0.029617
+Calculation time (CPU): 1.320160
+Transfer from GPU time: 0.019829
+Freeing memory...
+==============================================
+Grid dimension is 325 x 325
+Launching 108160000 threads (N=107957120)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 107957120
+Transfer to GPU time: 0.048031
+Calculation time (GPU): 0.030269
+Calculation time (CPU): 1.348425
+Transfer from GPU time: 0.020284
+Freeing memory...
+==============================================
+Grid dimension is 329 x 329
+Launching 110838784 threads (N=110254080)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 110254080
+Transfer to GPU time: 0.049037
+Calculation time (GPU): 0.030904
+Calculation time (CPU): 1.387233
+Transfer from GPU time: 0.020714
+Freeing memory...
+==============================================
+Grid dimension is 332 x 332
+Launching 112869376 threads (N=112551040)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 112551040
+Transfer to GPU time: 0.050081
+Calculation time (GPU): 0.031545
+Calculation time (CPU): 1.433703
+Transfer from GPU time: 0.021171
+Freeing memory...
+==============================================
+Grid dimension is 335 x 335
+Launching 114918400 threads (N=114848000)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 114848000
+Transfer to GPU time: 0.024815
+Calculation time (GPU): 0.032207
+Calculation time (CPU): 1.512789
+Transfer from GPU time: 0.009070
+Freeing memory...
+==============================================
+Grid dimension is 339 x 339
+Launching 117679104 threads (N=117144960)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 117144960
+Transfer to GPU time: 0.025540
+Calculation time (GPU): 0.032838
+Calculation time (CPU): 1.514817
+Transfer from GPU time: 0.009255
+Freeing memory...
+==============================================
+Grid dimension is 342 x 342
+Launching 119771136 threads (N=119441920)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 119441920
+Transfer to GPU time: 0.025487
+Calculation time (GPU): 0.033480
+Calculation time (CPU): 1.516292
+Transfer from GPU time: 0.009568
+Freeing memory...
+==============================================
+Grid dimension is 345 x 345
+Launching 121881600 threads (N=121738880)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 121738880
+Transfer to GPU time: 0.026359
+Calculation time (GPU): 0.034122
+Calculation time (CPU): 1.546555
+Transfer from GPU time: 0.009670
+Freeing memory...
+==============================================
+Grid dimension is 349 x 349
+Launching 124724224 threads (N=124035840)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 124035840
+Transfer to GPU time: 0.026537
+Calculation time (GPU): 0.034768
+Calculation time (CPU): 1.575638
+Transfer from GPU time: 0.009897
+Freeing memory...
+==============================================
+Grid dimension is 352 x 352
+Launching 126877696 threads (N=126332800)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 126332800
+Transfer to GPU time: 0.026815
+Calculation time (GPU): 0.035412
+Calculation time (CPU): 1.604141
+Transfer from GPU time: 0.010045
+Freeing memory...
+==============================================
+Grid dimension is 355 x 355
+Launching 129049600 threads (N=128629760)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 128629760
+Transfer to GPU time: 0.027482
+Calculation time (GPU): 0.036052
+Calculation time (CPU): 1.632151
+Transfer from GPU time: 0.010212
+Freeing memory...
+==============================================
+Grid dimension is 358 x 358
+Launching 131239936 threads (N=130926720)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 130926720
+Transfer to GPU time: 0.027992
+Calculation time (GPU): 0.036699
+Calculation time (CPU): 1.666772
+Transfer from GPU time: 0.010369
+Freeing memory...
+==============================================
+Grid dimension is 361 x 361
+Launching 133448704 threads (N=133223680)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 133223680
+Transfer to GPU time: 0.028620
+Calculation time (GPU): 0.037348
+Calculation time (CPU): 1.693610
+Transfer from GPU time: 0.010515
+Freeing memory...
+==============================================
+Grid dimension is 364 x 364
+Launching 135675904 threads (N=135520640)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 135520640
+Transfer to GPU time: 0.029131
+Calculation time (GPU): 0.037989
+Calculation time (CPU): 1.724139
+Transfer from GPU time: 0.010729
+Freeing memory...
+==============================================
+Grid dimension is 367 x 367
+Launching 137921536 threads (N=137817600)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 137817600
+Transfer to GPU time: 0.029415
+Calculation time (GPU): 0.038631
+Calculation time (CPU): 1.748194
+Transfer from GPU time: 0.011052
+Freeing memory...
+==============================================
+Grid dimension is 370 x 370
+Launching 140185600 threads (N=140114560)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 140114560
+Transfer to GPU time: 0.030256
+Calculation time (GPU): 0.039269
+Calculation time (CPU): 1.778596
+Transfer from GPU time: 0.011150
+Freeing memory...
+==============================================
+Grid dimension is 373 x 373
+Launching 142468096 threads (N=142411520)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 142411520
+Transfer to GPU time: 0.030425
+Calculation time (GPU): 0.036515
+Calculation time (CPU): 1.807726
+Transfer from GPU time: 0.011311
+Freeing memory...
+==============================================
+Grid dimension is 376 x 376
+Launching 144769024 threads (N=144708480)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 144708480
+Transfer to GPU time: 0.030974
+Calculation time (GPU): 0.035051
+Calculation time (CPU): 1.839014
+Transfer from GPU time: 0.011539
+Freeing memory...
+==============================================
+Grid dimension is 379 x 379
+Launching 147088384 threads (N=147005440)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 147005440
+Transfer to GPU time: 0.031740
+Calculation time (GPU): 0.034684
+Calculation time (CPU): 1.865987
+Transfer from GPU time: 0.011639
+Freeing memory...
+==============================================
+Grid dimension is 382 x 382
+Launching 149426176 threads (N=149302400)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 149302400
+Transfer to GPU time: 0.031941
+Calculation time (GPU): 0.034351
+Calculation time (CPU): 1.889285
+Transfer from GPU time: 0.011881
+Freeing memory...
+==============================================
+Grid dimension is 385 x 385
+Launching 151782400 threads (N=151599360)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 151599360
+Transfer to GPU time: 0.046829
+Calculation time (GPU): 0.033291
+Calculation time (CPU): 1.925819
+Transfer from GPU time: 0.033988
+Freeing memory...
+==============================================
+Grid dimension is 388 x 388
+Launching 154157056 threads (N=153896320)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 153896320
+Transfer to GPU time: 0.032806
+Calculation time (GPU): 0.032879
+Calculation time (CPU): 1.952846
+Transfer from GPU time: 0.012107
+Freeing memory...
+==============================================
+Grid dimension is 391 x 391
+Launching 156550144 threads (N=156193280)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 156193280
+Transfer to GPU time: 0.034176
+Calculation time (GPU): 0.033373
+Calculation time (CPU): 2.058422
+Transfer from GPU time: 0.012243
+Freeing memory...
+==============================================
+Grid dimension is 394 x 394
+Launching 158961664 threads (N=158490240)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 158490240
+Transfer to GPU time: 0.033537
+Calculation time (GPU): 0.033853
+Calculation time (CPU): 2.011550
+Transfer from GPU time: 0.012469
+Freeing memory...
+==============================================
+Grid dimension is 397 x 397
+Launching 161391616 threads (N=160787200)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 160787200
+Transfer to GPU time: 0.034342
+Calculation time (GPU): 0.034341
+Calculation time (CPU): 2.039192
+Transfer from GPU time: 0.012588
+Freeing memory...
+==============================================
+Grid dimension is 400 x 400
+Launching 163840000 threads (N=163084160)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 163084160
+Transfer to GPU time: 0.034884
+Calculation time (GPU): 0.045709
+Calculation time (CPU): 2.068962
+Transfer from GPU time: 0.012802
+Freeing memory...
+==============================================
+Grid dimension is 402 x 402
+Launching 165482496 threads (N=165381120)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 165381120
+Transfer to GPU time: 0.035050
+Calculation time (GPU): 0.041536
+Calculation time (CPU): 2.098690
+Transfer from GPU time: 0.013097
+Freeing memory...
+==============================================
+Grid dimension is 405 x 405
+Launching 167961600 threads (N=167678080)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 167678080
+Transfer to GPU time: 0.035607
+Calculation time (GPU): 0.035807
+Calculation time (CPU): 2.129600
+Transfer from GPU time: 0.013162
+Freeing memory...
+==============================================
+Grid dimension is 408 x 408
+Launching 170459136 threads (N=169975040)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 169975040
+Transfer to GPU time: 0.036396
+Calculation time (GPU): 0.036312
+Calculation time (CPU): 2.156979
+Transfer from GPU time: 0.013233
+Freeing memory...
+==============================================
+Grid dimension is 411 x 411
+Launching 172975104 threads (N=172272000)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 172272000
+Transfer to GPU time: 0.036831
+Calculation time (GPU): 0.036796
+Calculation time (CPU): 2.194968
+Transfer from GPU time: 0.013639
+Freeing memory...
+==============================================
+Grid dimension is 413 x 413
+Launching 174662656 threads (N=174568960)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 174568960
+Transfer to GPU time: 0.036913
+Calculation time (GPU): 0.037275
+Calculation time (CPU): 2.216460
+Transfer from GPU time: 0.013786
+Freeing memory...
+==============================================
+Grid dimension is 416 x 416
+Launching 177209344 threads (N=176865920)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 176865920
+Transfer to GPU time: 0.130691
+Calculation time (GPU): 0.037765
+Calculation time (CPU): 2.243041
+Transfer from GPU time: 0.073775
+Freeing memory...
+==============================================
+Grid dimension is 419 x 419
+Launching 179774464 threads (N=179162880)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 179162880
+Transfer to GPU time: 0.110856
+Calculation time (GPU): 0.038263
+Calculation time (CPU): 2.240777
+Transfer from GPU time: 0.071605
+Freeing memory...
+==============================================
+Grid dimension is 421 x 421
+Launching 181494784 threads (N=181459840)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 181459840
+Transfer to GPU time: 0.090478
+Calculation time (GPU): 0.050854
+Calculation time (CPU): 2.392564
+Transfer from GPU time: 0.045327
+Freeing memory...
+==============================================
+Grid dimension is 424 x 424
+Launching 184090624 threads (N=183756800)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 183756800
+Transfer to GPU time: 0.040303
+Calculation time (GPU): 0.046147
+Calculation time (CPU): 2.331276
+Transfer from GPU time: 0.014666
+Freeing memory...
+==============================================
+Grid dimension is 427 x 427
+Launching 186704896 threads (N=186053760)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 186053760
+Transfer to GPU time: 0.039523
+Calculation time (GPU): 0.042448
+Calculation time (CPU): 2.361244
+Transfer from GPU time: 0.014568
+Freeing memory...
+==============================================
+Grid dimension is 429 x 429
+Launching 188457984 threads (N=188350720)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 188350720
+Transfer to GPU time: 0.040536
+Calculation time (GPU): 0.040228
+Calculation time (CPU): 2.382913
+Transfer from GPU time: 0.014868
+Freeing memory...
+==============================================
+Grid dimension is 432 x 432
+Launching 191102976 threads (N=190647680)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 190647680
+Transfer to GPU time: 0.114896
+Calculation time (GPU): 0.040716
+Calculation time (CPU): 2.405262
+Transfer from GPU time: 0.057789
+Freeing memory...
+==============================================
+Grid dimension is 435 x 435
+Launching 193766400 threads (N=192944640)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 192944640
+Transfer to GPU time: 0.085872
+Calculation time (GPU): 0.041254
+Calculation time (CPU): 2.419548
+Transfer from GPU time: 0.036366
+Freeing memory...
+==============================================
+Grid dimension is 437 x 437
+Launching 195552256 threads (N=195241600)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 195241600
+Transfer to GPU time: 0.086982
+Calculation time (GPU): 0.041690
+Calculation time (CPU): 2.441546
+Transfer from GPU time: 0.036608
+Freeing memory...
+==============================================
+Grid dimension is 440 x 440
+Launching 198246400 threads (N=197538560)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 197538560
+Transfer to GPU time: 0.088058
+Calculation time (GPU): 0.042182
+Calculation time (CPU): 2.468759
+Transfer from GPU time: 0.036961
+Freeing memory...
+==============================================
+Grid dimension is 442 x 442
+Launching 200052736 threads (N=199835520)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 199835520
+Transfer to GPU time: 0.088859
+Calculation time (GPU): 0.055987
+Calculation time (CPU): 2.500714
+Transfer from GPU time: 0.037405
+Freeing memory...
+==============================================
+Grid dimension is 445 x 445
+Launching 202777600 threads (N=202132480)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 202132480
+Transfer to GPU time: 0.089786
+Calculation time (GPU): 0.050744
+Calculation time (CPU): 2.526647
+Transfer from GPU time: 0.037882
+Freeing memory...
+==============================================
+Grid dimension is 447 x 447
+Launching 204604416 threads (N=204429440)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 204429440
+Transfer to GPU time: 0.090970
+Calculation time (GPU): 0.043641
+Calculation time (CPU): 2.560023
+Transfer from GPU time: 0.038363
+Freeing memory...
+==============================================
+Grid dimension is 450 x 450
+Launching 207360000 threads (N=206726400)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 206726400
+Transfer to GPU time: 0.092447
+Calculation time (GPU): 0.044131
+Calculation time (CPU): 2.593753
+Transfer from GPU time: 0.038902
+Freeing memory...
+==============================================
+Grid dimension is 452 x 452
+Launching 209207296 threads (N=209023360)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 209023360
+Transfer to GPU time: 0.092947
+Calculation time (GPU): 0.044625
+Calculation time (CPU): 2.629764
+Transfer from GPU time: 0.039212
+Freeing memory...
+==============================================
+Grid dimension is 455 x 455
+Launching 211993600 threads (N=211320320)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 211320320
+Transfer to GPU time: 0.093887
+Calculation time (GPU): 0.045111
+Calculation time (CPU): 2.646594
+Transfer from GPU time: 0.039614
+Freeing memory...
+==============================================
+Grid dimension is 457 x 457
+Launching 213861376 threads (N=213617280)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 213617280
+Transfer to GPU time: 0.095125
+Calculation time (GPU): 0.045600
+Calculation time (CPU): 2.677705
+Transfer from GPU time: 0.040026
+Freeing memory...
+==============================================
+Grid dimension is 460 x 460
+Launching 216678400 threads (N=215914240)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 215914240
+Transfer to GPU time: 0.095896
+Calculation time (GPU): 0.060486
+Calculation time (CPU): 2.702008
+Transfer from GPU time: 0.040472
+Freeing memory...
+==============================================
+Grid dimension is 462 x 462
+Launching 218566656 threads (N=218211200)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 218211200
+Transfer to GPU time: 0.098561
+Calculation time (GPU): 0.054761
+Calculation time (CPU): 2.733263
+Transfer from GPU time: 0.040854
+Freeing memory...
+==============================================
+Grid dimension is 465 x 465
+Launching 221414400 threads (N=220508160)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 220508160
+Transfer to GPU time: 0.097998
+Calculation time (GPU): 0.050289
+Calculation time (CPU): 2.759704
+Transfer from GPU time: 0.041308
+Freeing memory...
+==============================================
+Grid dimension is 467 x 467
+Launching 223323136 threads (N=222805120)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 222805120
+Transfer to GPU time: 0.099147
+Calculation time (GPU): 0.050812
+Calculation time (CPU): 2.796679
+Transfer from GPU time: 0.041778
+Freeing memory...
+==============================================
+Grid dimension is 469 x 469
+Launching 225240064 threads (N=225102080)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 225102080
+Transfer to GPU time: 0.100350
+Calculation time (GPU): 0.048049
+Calculation time (CPU): 2.818133
+Transfer from GPU time: 0.042219
+Freeing memory...
+==============================================
+Grid dimension is 472 x 472
+Launching 228130816 threads (N=227399040)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 227399040
+Transfer to GPU time: 0.101342
+Calculation time (GPU): 0.048559
+Calculation time (CPU): 2.846141
+Transfer from GPU time: 0.043574
+Freeing memory...
+==============================================
+Grid dimension is 474 x 474
+Launching 230068224 threads (N=229696000)
+Input values: 0.000000 0.000000 0.000000...
+Memory Copy from Host to Device successful.
+Memory Copy from Device to Host successful.
+Output values: 0.000000 0.000000 1.000000...
+Output values (CPU): 0.000000 0.000000 0.000000...
+Timing results for n = 229696000
+Transfer to GPU time: 0.102191
+Calculation time (GPU): 0.064344
+Calculation time (CPU): 2.877750
+Transfer from GPU time: 0.043077
+Freeing memory...
+==============================================
+
+
+Finished.
