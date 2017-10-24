@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <cuda_profiler_api.h>
 
-// TITAN X Spec
-#define BLOCK_D1 1024
-#define BLOCK_D2 1
-#define BLOCK_D3 1
+#define N_PIXELS 2296960
+#define N_SECTORS 32
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -22,19 +20,13 @@ cudaError_t checkCuda(cudaError_t result)
 
 __global__ void kernel(short *a, int offset, short *dark, int offsetDark, int *sectorSum)
 {
-  // note that this assumes no third dimension to the grid
-  // id of the block
-  int myblock = blockIdx.x + blockIdx.y * gridDim.x;
-  // size of each block (within grid of blocks)
-  int blocksize = blockDim.x * blockDim.y * blockDim.z;
-  // id of thread in a given block
-  int subthread = threadIdx.z*(blockDim.x * blockDim.y) + threadIdx.y*blockDim.x + threadIdx.x;
-  // assign overall id/index of the thread
-  int idx = myblock * blocksize + subthread;
+  int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
+  int iDark = offsetDark + threadIdx.x + blockIdx.x*blockDim.x;
+  a[i] -= dark[iDark];
 
-  a[idx + offset] -= 1;  
   // calculate sum per sector
-  //int mySector = threadIdx.z + (offset / (blockDim.x * blockDim.y)); 
+  int iSector = ((offset / N_PIXELS) * N_SECTORS) + hfloor(iDark / N_SECTORS);
+  sectorSum[iSector] = iSector;
   //atomicAdd(&sectorSum[mySector], mySector);
   //sectorSum[mySector] = mySector;
 }
@@ -78,8 +70,9 @@ int main(int argc, char **argv)
   const int nEvents = atoi(argv[1]);
   const int n = nPixels * nEvents;
 
-  const int nStreams = atoi(argv[2]);
-  const int streamSize = ceil(n / nStreams);
+  int nStreams = 16 * nEvents / 10;
+  if (nStreams < 16) nStreams = 16;
+  const int streamSize = n / nStreams;
   const int nSectors = maxQuads * maxSectors * nEvents;
 
   const int streamBytes = streamSize * sizeof(short);
@@ -88,26 +81,13 @@ int main(int argc, char **argv)
   const int sumSectorBytes = nSectors * sizeof(int);
 
   // a block has 1024 threads
-  const dim3 blockSize(BLOCK_D1, BLOCK_D2, BLOCK_D3);
-  printf("Block dimension is %i x %i x %i\n", BLOCK_D1, BLOCK_D2, BLOCK_D3);  
-
-  // determine number of blocks we need for a given problem size
-  int tmp = ceil(pow(n/(BLOCK_D1 * BLOCK_D2 * BLOCK_D3 * nStreams), 0.5));
-  printf("Grid dimension is %i x %i\n", tmp, tmp);
-  dim3 gridSize(tmp, tmp, 1);
-
-  int nthreads = BLOCK_D1*BLOCK_D2*BLOCK_D3*tmp*tmp;
-  if (nthreads < n){
-    printf("\n================ NOT ENOUGH THREADS TO COVER N=%d =======================\n\n", n);
-  } else {
-    printf("Launching %d threads (N=%d)\n", nthreads, n);
-
-  }
- 
+  const int blockSize = 185;
   printf("Running with nStreams: %d streamSize: %d\n", nStreams, streamSize);
+  int gridSize = streamSize / blockSize;
+  printf("blockSize: %d gridSize: %d\n", blockSize, gridSize);
 
   int devId = 0;
-  if (argc > 3) devId = atoi(argv[3]);
+  if (argc > 2) devId = atoi(argv[2]);
   
   cudaDeviceProp prop;
   checkCuda( cudaGetDeviceProperties(&prop, devId));
@@ -162,11 +142,11 @@ int main(int argc, char **argv)
                                stream[i]) );
   }
   
-  //cudaMemcpy(sectorSum, d_sectorSum, sumSectorBytes, cudaMemcpyDeviceToHost);
-  //for (int i =0; i< 10; i++){
-  //  printf("i: %d, sectorSum[i]: %d \n", i, sectorSum[i]);
-  //}
-  printf("Output values: %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  cudaMemcpy(sectorSum, d_sectorSum, sumSectorBytes, cudaMemcpyDeviceToHost);
+  for (int i =0; i< nEvents * N_SECTORS; i++){
+    printf("i: %d, sectorSum[i]: %d \n", i, sectorSum[i]);
+  }
+  //printf("Output values: %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[143559], a[143560], a[143561]);
   cudaProfilerStop();
   checkCuda( cudaEventRecord(stopEvent, 0) );
   checkCuda( cudaEventSynchronize(stopEvent) );
