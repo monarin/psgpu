@@ -10,6 +10,7 @@ using namespace std;
 #include <string>
 #include <sstream>
 #include <fstream>
+#define N_PIXELS 2296960
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -25,10 +26,10 @@ cudaError_t checkCuda(cudaError_t result)
   return result;
 }
 
-__global__ void kernel(short *a, int offset, short *dark, int offsetDark)
+__global__ void kernel(short *a, int offset, short *dark)
 {
   int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
-  int iDark = offsetDark + threadIdx.x + blockIdx.x*blockDim.x;
+  int iDark = i % N_PIXELS;
   a[i] -= dark[iDark];
 }
 
@@ -51,7 +52,7 @@ float maxError(short *a, int n)
 
 int main(int argc, char **argv)
 {
-  const int nPixels = 32*185*388;			// no. of pixels per image
+  const int nPixels = 2296960;			// no. of pixels per image
   const int nEvents = atoi(argv[1]);			// no. of events
   const int n = nPixels * nEvents;			// total number of pixels
   
@@ -78,18 +79,23 @@ int main(int argc, char **argv)
   checkCuda( cudaSetDevice(devId) );
 
   // allocate pinned host memory and device memory
+  // RAW
   short *a, *d_a; 						// data address
   checkCuda( cudaMallocHost((void**)&a, bytes) ); 		// host pinned
   checkCuda( cudaMalloc((void**)&d_a, bytes) ); 		// device
+  // RAW-PEDESTAL
   short *pedCorrected, *d_pedCorrected; 			// data address
   checkCuda( cudaMallocHost((void**)&pedCorrected, darkBytes) ); // host pinned
   checkCuda( cudaMalloc((void**)&d_pedCorrected, darkBytes) ); 	// device  
+  // PEDESTAL
   short *dark, *d_dark;					 	// dark address
   checkCuda( cudaMallocHost((void**)&dark, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_dark, darkBytes) );		// device
+  // PER-PIXEL GAIN
   short *gain, *d_gain;					 	// dark address
   checkCuda( cudaMallocHost((void**)&gain, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_gain, darkBytes) );		// device
+  // RAW-PEDESTAL
   short *calib, *d_calib;					 	// dark address
   checkCuda( cudaMallocHost((void**)&calib, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_calib, darkBytes) );		// device  
@@ -100,6 +106,7 @@ int main(int argc, char **argv)
   ifstream inP("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_pedestal_95.txt");
   ifstream inG("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_gain_95.txt");
   ifstream inC("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_calib_95.txt");
+  // Fill arrays from text files
   string line;
   for (unsigned int i=0; i<nPixels;i++){
     getline(inR, line);
@@ -154,13 +161,12 @@ int main(int argc, char **argv)
   checkCuda( cudaEventRecord(startEvent, 0) );
   cudaProfilerStart();
   for (int i = 0; i < nStreams; ++i) {
-    int offset = i * streamSize;				// offset by no. of pixels in stream
-    int offsetDark = offset % nPixels;
-    checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],	// async copy stream from host to device
+    int offset = i * streamSize;
+    checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
                                streamBytes, cudaMemcpyHostToDevice,
                                stream[i]) );
-    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, offsetDark); // subtract dark
-    checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],	// async copy stream from device to host
+    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark);
+    checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
                                streamBytes, cudaMemcpyDeviceToHost,
                                stream[i]) );
   }
