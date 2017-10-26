@@ -7,6 +7,8 @@
 #include <iomanip>
 using namespace std;
 
+#define N_PIXELS 2400000
+
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
 inline
@@ -21,10 +23,10 @@ cudaError_t checkCuda(cudaError_t result)
   return result;
 }
 
-__global__ void kernel(short *a, int offset, short *dark, int offsetDark)
+__global__ void kernel(short *a, int offset, short *dark)
 {
   int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
-  int iDark = offsetDark + threadIdx.x + blockIdx.x*blockDim.x;
+  int iDark = i % N_PIXELS;
   a[i] -= dark[iDark];
 }
 
@@ -124,13 +126,12 @@ int main(int argc, char **argv)
   checkCuda( cudaEventRecord(startEvent, 0) );
   cudaProfilerStart();
   for (int i = 0; i < nStreams; ++i) {
-    int offset = i * streamSize;				// offset by no. of pixels in stream
-    int offsetDark = offset % nPixels;
-    checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],	// async copy stream from host to device
+    int offset = i * streamSize;
+    checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
                                streamBytes, cudaMemcpyHostToDevice,
                                stream[i]) );
-    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, offsetDark); // subtract dark
-    checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],	// async copy stream from device to host
+    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark);
+    checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
                                streamBytes, cudaMemcpyDeviceToHost,
                                stream[i]) );
   }

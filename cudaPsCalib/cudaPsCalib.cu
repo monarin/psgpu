@@ -2,7 +2,7 @@
 #include <cuda_profiler_api.h>
 
 #define N_PIXELS 2296960
-#define N_SECTORS 32
+#define SECTOR_SIZE 71780
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -18,31 +18,31 @@ cudaError_t checkCuda(cudaError_t result)
   return result;
 }
 
-__global__ void kernel(short *a, int offset, short *dark, int offsetDark, int *sectorSum)
+__global__ void kernel(short *a, int offset, short *dark, int *blockSum)
 {
   int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
-  int iDark = offsetDark + threadIdx.x + blockIdx.x*blockDim.x;
+  int iDark = i % N_PIXELS;
   a[i] -= dark[iDark];
-
-  // calculate sum per sector
-  int iSector = ((offset / N_PIXELS) * N_SECTORS) + hfloor(iDark / N_SECTORS);
-  sectorSum[iSector] = iSector;
-  //atomicAdd(&sectorSum[mySector], mySector);
-  //sectorSum[mySector] = mySector;
+  
+  // calculate sum per block
+  int iBlock = floor( (double) i / blockDim.x );
+  atomicAdd(&blockSum[iBlock], a[i]);
 }
 
-__global__ void common_mode(int *blockSum, int *sectorMean, int offsetSector)
+__global__ void common_mode(int *blockSum, int offset, int *sectorSum)
 {
-  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int i = offset + threadIdx.x + blockIdx.x * blockDim.x;
 
-  // calculate sector mean
-  atomicAdd(&sectorMean[offsetSector], blockSum[i]);
+  // calculate sector sum
+  int iSector = floor( (double) i / blockDim.x );
+  atomicAdd(&sectorSum[iSector], blockSum[i]);
 }
 
-__global__ void common_mode_apply(short *a, int offset, int *sectorMean, int offsetSector, int sectorSize)
+__global__ void common_mode_apply(short *a, int offset, int *sectorSum)
 {
   int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
-  a[i] = a[i] - (sectorMean[offsetSector]/sectorSize);
+  int iSector = floor( (double) i / SECTOR_SIZE );
+  a[i] = a[i] - (sectorSum[iSector] / SECTOR_SIZE);
 }
 
 /* ---------------------- host code -----------------------------*/
@@ -56,7 +56,7 @@ float maxError(short *a, int n)
 {
   float maxE = 0;
   for (int i = 0; i < n; i++) {
-    float error = fabs(a[i]-1.0f);
+    float error = fabs(a[i]-0.0f);
     if (error > maxE) maxE = error;
   }
   return maxE;
@@ -70,24 +70,28 @@ int main(int argc, char **argv)
   const int nEvents = atoi(argv[1]);
   const int n = nPixels * nEvents;
 
-  int nStreams = 16 * nEvents / 10;
-  if (nStreams < 16) nStreams = 16;
+  int nStreams = 32;
+  if (argc > 2) nStreams = atoi(argv[2]);
   const int streamSize = n / nStreams;
-  const int nSectors = maxQuads * maxSectors * nEvents;
-
   const int streamBytes = streamSize * sizeof(short);
+  
   const int bytes = n * sizeof(short);
+  
   const int darkBytes = nPixels * sizeof(short);
-  const int sumSectorBytes = nSectors * sizeof(int);
-
-  // a block has 1024 threads
+  
   const int blockSize = 185;
+  const int nBlocks = n / blockSize;
+  const int blockSumBytes = nBlocks * sizeof(int);
+  
+  const int nSectors = nBlocks / nRows;   
+  const int sectorSumBytes = nSectors * sizeof(int);
+
   printf("Running with nStreams: %d streamSize: %d\n", nStreams, streamSize);
   int gridSize = streamSize / blockSize;
   printf("blockSize: %d gridSize: %d\n", blockSize, gridSize);
-
+  
   int devId = 0;
-  if (argc > 2) devId = atoi(argv[2]);
+  if (argc > 3) devId = atoi(argv[3]);
   
   cudaDeviceProp prop;
   checkCuda( cudaGetDeviceProperties(&prop, devId));
@@ -98,16 +102,21 @@ int main(int argc, char **argv)
   short *a, *d_a; // data
   checkCuda( cudaMallocHost((void**)&a, bytes) ); // host pinned
   checkCuda( cudaMalloc((void**)&d_a, bytes) ); // device  
+  
   short *dark, *d_dark; // dark
   checkCuda( cudaMallocHost((void**)&dark, darkBytes) ); 
   checkCuda( cudaMalloc((void**)&d_dark, darkBytes) ); 
-  int *d_sectorSum, *sectorSum; // sum of each sector
-  checkCuda( cudaMalloc((void**)&d_sectorSum, sumSectorBytes) ); 
-  cudaMemset(d_sectorSum, 0, sumSectorBytes);
-  sectorSum = (int *) malloc(sumSectorBytes);
+  
+  int *d_blockSum; // sum of each block
+  checkCuda( cudaMalloc((void**)&d_blockSum, blockSumBytes) ); 
+  cudaMemset(d_blockSum, 0, blockSumBytes);
+  
+  int *d_sectorSum; // sum of each sector
+  checkCuda( cudaMalloc((void**)&d_sectorSum, sectorSumBytes) );
+  cudaMemset(d_sectorSum, 0, sectorSumBytes);
   
   // prepare raw and dark data
-  fill(a, n, 3);
+  fill(a, n, 2);
   fill(dark, nPixels, 1);
   printf("Input values (Data): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
   printf("Input values (Dark): %d %d %d...%d %d %d\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
@@ -131,23 +140,18 @@ int main(int argc, char **argv)
   cudaProfilerStart();
   for (int i = 0; i < nStreams; ++i) {
     int offset = i * streamSize;
-    int offsetDark = offset % nPixels;
-    printf("Stream :%d offset:%d offsetDark:%d\n", i, offset, offsetDark);
+    int offsetSector = i * (streamSize / blockSize);
     checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
                                streamBytes, cudaMemcpyHostToDevice,
                                stream[i]) );
-    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, offsetDark, d_sectorSum);
+    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, d_blockSum);
+    common_mode<<<nBlocks/(nStreams * nRows), nRows, 0, stream[i]>>>(d_blockSum, offsetSector, d_sectorSum); 
+    common_mode_apply<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_sectorSum);
     checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
                                streamBytes, cudaMemcpyDeviceToHost,
                                stream[i]) );
   }
-  
-  cudaMemcpy(sectorSum, d_sectorSum, sumSectorBytes, cudaMemcpyDeviceToHost);
-  for (int i =0; i< nEvents * N_SECTORS; i++){
-    printf("i: %d, sectorSum[i]: %d \n", i, sectorSum[i]);
-  }
-  //printf("Output values: %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[143559], a[143560], a[143561]);
-  cudaProfilerStop();
+  cudaProfilerStop(); 
   checkCuda( cudaEventRecord(stopEvent, 0) );
   checkCuda( cudaEventSynchronize(stopEvent) );
   checkCuda( cudaEventElapsedTime(&ms, startEvent, stopEvent) );
