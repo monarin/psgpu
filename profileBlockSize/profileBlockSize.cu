@@ -7,7 +7,10 @@
 #include <iomanip>
 using namespace std;
 
-#define N_PIXELS 2400000
+#include <string>
+#include <sstream>
+#include <fstream>
+#define N_PIXELS 2296960
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -49,7 +52,7 @@ float maxError(short *a, int n)
 
 int main(int argc, char **argv)
 {
-  const int nPixels = 2400000;				// no. of pixels per image
+  const int nPixels = 2296960;			// no. of pixels per image
   const int nEvents = atoi(argv[1]);			// no. of events
   const int n = nPixels * nEvents;			// total number of pixels
   
@@ -76,16 +79,48 @@ int main(int argc, char **argv)
   checkCuda( cudaSetDevice(devId) );
 
   // allocate pinned host memory and device memory
+  // RAW
   short *a, *d_a; 						// data address
   checkCuda( cudaMallocHost((void**)&a, bytes) ); 		// host pinned
-  checkCuda( cudaMalloc((void**)&d_a, bytes) ); 		// device  
+  checkCuda( cudaMalloc((void**)&d_a, bytes) ); 		// device
+  // RAW-PEDESTAL
+  short *pedCorrected, *d_pedCorrected; 			// data address
+  checkCuda( cudaMallocHost((void**)&pedCorrected, darkBytes) ); // host pinned
+  checkCuda( cudaMalloc((void**)&d_pedCorrected, darkBytes) ); 	// device  
+  // PEDESTAL
   short *dark, *d_dark;					 	// dark address
   checkCuda( cudaMallocHost((void**)&dark, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_dark, darkBytes) );		// device
-  
+  // PER-PIXEL GAIN
+  short *gain, *d_gain;					 	// dark address
+  checkCuda( cudaMallocHost((void**)&gain, darkBytes) ); 	// host pinned
+  checkCuda( cudaMalloc((void**)&d_gain, darkBytes) );		// device
+  // RAW-PEDESTAL
+  short *calib, *d_calib;					 	// dark address
+  checkCuda( cudaMallocHost((void**)&calib, darkBytes) ); 	// host pinned
+  checkCuda( cudaMalloc((void**)&d_calib, darkBytes) );		// device  
   // prepare data (all 1's) and dark (all 0's) on host
-  fill(a, n, 1);
-  fill(dark, nPixels, 0);
+  //load the text file and put it into a single string:
+  ifstream inR("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_raw_95.txt");
+  ifstream inPC("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_pedCorrected_95.txt");
+  ifstream inP("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_pedestal_95.txt");
+  ifstream inG("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_gain_95.txt");
+  ifstream inC("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_calib_95.txt");
+  // Fill arrays from text files
+  string line;
+  for (unsigned int i=0; i<nPixels;i++){
+    getline(inR, line);
+    a[i] = atof(line.c_str());
+    getline(inPC, line);
+    pedCorrected[i] = atof(line.c_str());
+    getline(inP, line);
+    dark[i] = atof(line.c_str());
+    getline(inG, line);
+    gain[i] = atof(line.c_str());
+    getline(inC, line);
+    calib[i] = atof(line.c_str());
+  }
+
   printf("Input values (Data): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
   printf("Input values (Dark): %d %d %d...%d %d %d\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
 
