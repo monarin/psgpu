@@ -40,14 +40,35 @@ void fill( short *p, int n, int val ) {
   }
 }
 
-float maxError(short *a, int n)
+float maxError(short *aCalc, short *aKnown, int n)
 {
   float maxE = 0;
   for (int i = 0; i < n; i++) {
-    float error = fabs(a[i]-1.0f);
+    float error = fabs(aCalc[i]-aKnown[i]);
     if (error > maxE) maxE = error;
   }
   return maxE;
+}
+
+void host_calc(short *a, short *dark, int n) {
+  // host calculation
+  struct timeval start, end;
+
+  long seconds, useconds;
+  double mtime;
+
+  gettimeofday(&start, NULL);
+
+  for(int i=0; i<n; i++)
+    a[i] -= dark[i];
+
+  gettimeofday(&end, NULL);
+
+  seconds  = end.tv_sec  - start.tv_sec;
+  useconds = end.tv_usec - start.tv_usec;
+  mtime = ((seconds) * 1000000 + useconds)/1000.0;// + 0.5;
+
+  cout << "Host dark-subtraction took "<< mtime <<" ms for 1 event."<< endl;
 }
 
 int main(int argc, char **argv)
@@ -124,24 +145,19 @@ int main(int argc, char **argv)
   printf("Input values (Data): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
   printf("Input values (Dark): %d %d %d...%d %d %d\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
 
-  // host calculation
-    struct timeval start, end;
+  // host calculation 
+  host_calc(a, dark, nPixels);
+  printf("Host Calculation\n");
+  printf("Input values (Data calc.): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  printf("Input values (Data known): %d %d %d...%d %d %d\n", pedCorrected[0], pedCorrected[1], pedCorrected[2], pedCorrected[nPixels-3], pedCorrected[nPixels-2], pedCorrected[nPixels-1]);
+  printf("  max error: %e\n", maxError(a, pedCorrected, n));
 
-    long seconds, useconds;    
-    double mtime;
-
-    gettimeofday(&start, NULL);
-
-    for(int i=0; i<nPixels; i++)
-      a[i] -= dark[i];
-
-    gettimeofday(&end, NULL);
-
-    seconds  = end.tv_sec  - start.tv_sec;
-    useconds = end.tv_usec - start.tv_usec;
-    mtime = ((seconds) * 1000000 + useconds)/1000.0;// + 0.5;
-
-    cout << "Host dark-subtraction took "<< mtime <<" ms for 1 event."<< endl;
+  // reload data
+  ifstream inR2("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_raw_95.txt");
+  for (unsigned int i=0; i<nPixels;i++){
+    getline(inR2, line);
+    a[i] = atof(line.c_str());
+  }
 
   // serial copy for one dark to device 
   checkCuda( cudaMemcpy(d_dark, dark, darkBytes, cudaMemcpyHostToDevice) );
@@ -174,8 +190,12 @@ int main(int argc, char **argv)
   checkCuda( cudaEventRecord(stopEvent, 0) );
   checkCuda( cudaEventSynchronize(stopEvent) );
   checkCuda( cudaEventElapsedTime(&ms, startEvent, stopEvent) );
+  printf("GPU Calculation\n");
   printf("Time for asynchronous V1 transfer and execute (ms): %f\n", ms);
-  printf("  max error: %e\n", maxError(a, n)); 
+  printf("Input values (Data calc.): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  printf("Input values (Data known): %d %d %d...%d %d %d\n", pedCorrected[0], pedCorrected[1], pedCorrected[2], pedCorrected[nPixels-3], pedCorrected[nPixels-2], pedCorrected[nPixels-1]);
+  printf("  max error: %e\n", maxError(a, pedCorrected, n));
+
   // cleanup
   checkCuda( cudaEventDestroy(startEvent) );
   checkCuda( cudaEventDestroy(stopEvent) );
