@@ -14,7 +14,6 @@ using namespace std;
 
 #define NUM_THREADS 32
 #define NUM_BLOCKS 16
-#define NUM_STREAMS 3
 
 // Convenience function for checking CUDA runtime API results
 // can be wrapped around any runtime API call. No-op in release builds.
@@ -39,20 +38,31 @@ void fill(int *a, int N, int val)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    const int N = 6000000;
+    const int N = 2296960*100;
+    int NUM_STREAMS = 1;
+    if (argc > 1) NUM_STREAMS = atoi(argv[1]);
 
     // --- Host side
-    int *h_in = new int[N]; 
+    /*int *h_in = new int[N]; 
     fill(h_in, N, 5);
     checkCuda(cudaHostRegister(h_in, N * sizeof(int), cudaHostRegisterPortable));
 
     int *h_out = new int[N];
     fill(h_out, N, 0);
     checkCuda(cudaHostRegister(h_out, N * sizeof(int), cudaHostRegisterPortable));
-
+     
     int *h_checkResults = new int[N];
+    fill(h_checkResults, N, 25);*/
+    
+    // --- Host side (pinned memory)
+    int *h_in, *h_out, *h_checkResults;
+    checkCuda( cudaMallocHost((void**)&h_in, N * sizeof(int)) ); 
+    checkCuda( cudaMallocHost((void**)&h_out, N * sizeof(int)) );
+    checkCuda( cudaMallocHost((void**)&h_checkResults, N * sizeof(int)) );
+    fill(h_in, N, 5);
+    fill(h_out, N, 0);
     fill(h_checkResults, N, 25);
 
     // --- Device side
@@ -68,16 +78,24 @@ int main()
     dim3 nBlocks = dim3(NUM_BLOCKS, 1, 1);
     dim3 subKernelBlock = dim3((int) ceil( (float) nBlocks.x / 2));
 
+    // --- Crate CUDA events to capture time
+    cudaEvent_t startEvent, stopEvent;
+    checkCuda( cudaEventCreate(&startEvent) );
+    checkCuda( cudaEventCreate(&stopEvent) );
+    float ms;
+
     // --- Create CUDA streams
     cudaStream_t streams[NUM_STREAMS];
     for (int i = 0; i < NUM_STREAMS; i++)
         checkCuda(cudaStreamCreate(&streams[i]));
+    
+    checkCuda( cudaEventRecord(startEvent, 0) );
 
     for (int i = 0; i < NUM_STREAMS; i++) {
         int offset = i * streamSize;
         cudaMemcpyAsync(&d_in[offset], &h_in[offset], streamMemSize, cudaMemcpyHostToDevice, streams[i]);
 
-        printf("Input: %d %d %d...%d %d %d\n", h_in[offset+0], h_in[offset+1], h_in[offset+2], h_in[offset+streamSize-3], h_in[offset+streamSize-2], h_in[offset+streamSize-1]);
+        //printf("Input: %d %d %d...%d %d %d\n", h_in[offset+0], h_in[offset+1], h_in[offset+2], h_in[offset+streamSize-3], h_in[offset+streamSize-2], h_in[offset+streamSize-1]);
     }
 
     for (int i = 0; i < NUM_STREAMS; i++) {
@@ -97,44 +115,50 @@ int main()
                     thrust::device_pointer_cast(&d_out[offset + streamSize / 2]),
                     BinaryOp());
     }
-
+    
     // copy data out
     for (int i = 0; i < NUM_STREAMS; i ++) {
         int offset = i * streamSize;
         cudaMemcpyAsync(&h_out[offset], &d_out[offset], streamMemSize, cudaMemcpyDeviceToHost, streams[i]);
 
-        printf("Output: %d %d %d...%d %d %d\n", h_out[offset+0], h_out[offset+1], h_out[offset+2], h_out[offset+streamSize-3], h_out[offset+streamSize-2], h_out[offset+streamSize-1]);
+        //printf("Output: %d %d %d...%d %d %d\n", h_out[offset+0], h_out[offset+1], h_out[offset+2], h_out[offset+streamSize-3], h_out[offset+streamSize-2], h_out[offset+streamSize-1]);
     }
-    
+
+    checkCuda( cudaEventRecord(stopEvent, 0) );
+    checkCuda( cudaEventSynchronize(stopEvent) );
+    checkCuda( cudaEventElapsedTime(&ms, startEvent, stopEvent) );
+    printf("Total Time (ms): %f\n", ms);
+        
     for (int i = 0; i < NUM_STREAMS; i++) {
         checkCuda(cudaStreamSynchronize(streams[i]));
     }
-
+    
     checkCuda(cudaDeviceSynchronize());
     
+    // -- GPU output check
+    int sum = 0;
+    for (int i = 0; i < N; i++) {
+        sum += h_checkResults[i] - h_out[i];
+        //if ( i < 10 ) printf("%d %d", h_checkResults[i], h_out[i]);
+    }
+    
+    cout << "Error between CPU and GPU: " << sum << endl;
+    
     // -- Release resources
-    checkCuda(cudaHostUnregister(h_in));
-    checkCuda(cudaHostUnregister(h_out));
-    checkCuda(cudaFree(d_in));
-    checkCuda(cudaFree(d_out));
+    //checkCuda(cudaHostUnregister(h_in));
+    //checkCuda(cudaHostUnregister(h_out));
+    checkCuda( cudaFreeHost(h_in) );
+    checkCuda( cudaFreeHost(h_out) );
+    checkCuda( cudaFree(d_in) );
+    checkCuda( cudaFree(d_out) );
 
     for (int i = 0; i < NUM_STREAMS; i++)
         checkCuda(cudaStreamDestroy(streams[i]));
 
     cudaDeviceReset();
 
-    // -- GPU output check
-    int sum = 0;
-    for (int i = 0; i < N; i++) {
-        sum += h_checkResults[i] - h_out[i];
-        if ( i < 10 ) printf("%d %d", h_checkResults[i], h_out[i]);
-    }
-
-    cout << "Error between CPU and GPU: " << sum << endl;
-
-    delete[] h_in;
-    delete[] h_out;
-    delete[] h_checkResults;
-
+    //delete[] h_in;
+    //delete[] h_out;
+    //delete[] h_checkResults;
     return 0;
 }
