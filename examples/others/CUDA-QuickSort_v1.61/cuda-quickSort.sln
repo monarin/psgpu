@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fast_GPUquickSort", "Fast_GPUquickSort.vcxproj", "{37D17091-DE69-453C-B5E4-14E617134A1B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2D78D818-7D49-440E-A8B4-608DFCEAB702} = {2D78D818-7D49-440E-A8B4-608DFCEAB702}
+		{E84CBD44-4531-4C33-9855-67A48A4826F3} = {E84CBD44-4531-4C33-9855-67A48A4826F3}
+		{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51} = {2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mergeSort", "libraries\mergeSort\mergeSort.vcxproj", "{E84CBD44-4531-4C33-9855-67A48A4826F3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bitonicSort", "libraries\bitonicSort\bitonicSort.vcxproj", "{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpuquicksort_cederman", "libraries\gpuquicksort_cederman\gpuquicksort_cederman.vcxproj", "{2D78D818-7D49-440E-A8B4-608DFCEAB702}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37D17091-DE69-453C-B5E4-14E617134A1B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{37D17091-DE69-453C-B5E4-14E617134A1B}.Debug|Win32.Build.0 = Debug|Win32
+		{37D17091-DE69-453C-B5E4-14E617134A1B}.Release|Win32.ActiveCfg = Release|Win32
+		{37D17091-DE69-453C-B5E4-14E617134A1B}.Release|Win32.Build.0 = Release|Win32
+		{E84CBD44-4531-4C33-9855-67A48A4826F3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E84CBD44-4531-4C33-9855-67A48A4826F3}.Debug|Win32.Build.0 = Debug|Win32
+		{E84CBD44-4531-4C33-9855-67A48A4826F3}.Release|Win32.ActiveCfg = Release|Win32
+		{E84CBD44-4531-4C33-9855-67A48A4826F3}.Release|Win32.Build.0 = Release|Win32
+		{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}.Debug|Win32.Build.0 = Debug|Win32
+		{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}.Release|Win32.ActiveCfg = Release|Win32
+		{2D97C4B0-F8C2-4A4C-A8D6-97E53F246F51}.Release|Win32.Build.0 = Release|Win32
+		{2D78D818-7D49-440E-A8B4-608DFCEAB702}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2D78D818-7D49-440E-A8B4-608DFCEAB702}.Debug|Win32.Build.0 = Debug|Win32
+		{2D78D818-7D49-440E-A8B4-608DFCEAB702}.Release|Win32.ActiveCfg = Release|Win32
+		{2D78D818-7D49-440E-A8B4-608DFCEAB702}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
