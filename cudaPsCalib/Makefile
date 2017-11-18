@@ -34,7 +34,7 @@
 ################################################################################
 
 # Location of the CUDA Toolkit
-CUDA_PATH ?= /usr/local/cuda-9.0
+CUDA_PATH ?= /usr/local/cuda-8.0
 
 ##############################
 # start deprecated interface #
@@ -182,29 +182,6 @@ ifneq ($(TARGET_ARCH),$(HOST_ARCH))
     endif
 endif
 
-ifeq ($(TARGET_OS),qnx)
-    CCFLAGS += -DWIN_INTERFACE_CUSTOM
-    LDFLAGS += -lsocket
-endif
-
-# Install directory of different arch
-CUDA_INSTALL_TARGET_DIR :=
-ifeq ($(TARGET_ARCH)-$(TARGET_OS),armv7l-linux)
-    CUDA_INSTALL_TARGET_DIR = targets/armv7-linux-gnueabihf/
-else ifeq ($(TARGET_ARCH)-$(TARGET_OS),aarch64-linux)
-    CUDA_INSTALL_TARGET_DIR = targets/aarch64-linux/
-else ifeq ($(TARGET_ARCH)-$(TARGET_OS),armv7l-android)
-    CUDA_INSTALL_TARGET_DIR = targets/armv7-linux-androideabi/
-else ifeq ($(TARGET_ARCH)-$(TARGET_OS),aarch64-android)
-    CUDA_INSTALL_TARGET_DIR = targets/aarch64-linux-androideabi/
-else ifeq ($(TARGET_ARCH)-$(TARGET_OS),armv7l-qnx)
-    CUDA_INSTALL_TARGET_DIR = targets/ARMv7-linux-QNX/
-else ifeq ($(TARGET_ARCH)-$(TARGET_OS),aarch64-qnx)
-    CUDA_INSTALL_TARGET_DIR = targets/aarch64-qnx/
-else ifeq ($(TARGET_ARCH),ppc64le)
-    CUDA_INSTALL_TARGET_DIR = targets/ppc64le-linux/
-endif
-
 # Debug build flags
 ifeq ($(dbg),1)
       NVCCFLAGS += -g -G
@@ -233,7 +210,7 @@ LIBRARIES :=
 ################################################################################
 
 # Gencode arguments
-SMS ?= 35 37 50 52 60 70
+SMS ?= 20 30 35 37 50 52 60
 
 ifeq ($(SMS),)
 $(info >>> WARNING - no SM architectures have been specified - waiving sample <<<)
@@ -250,10 +227,6 @@ ifneq ($(HIGHEST_SM),)
 GENCODE_FLAGS += -gencode arch=compute_$(HIGHEST_SM),code=compute_$(HIGHEST_SM)
 endif
 endif
-
-ALL_CCFLAGS += -dc
-
-LIBRARIES += -lcudadevrt
 
 ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
@@ -276,10 +249,7 @@ endif
 cudaPsCalib.o:cudaPsCalib.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-cdpBitonicSort.o:cdpBitonicSort.cu
-	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
-cudaPsCalib: cudaPsCalib.o cdpBitonicSort.o
+cudaPsCalib: cudaPsCalib.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 	$(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
@@ -288,7 +258,7 @@ run: build
 	$(EXEC) ./cudaPsCalib
 
 clean:
-	rm -f cudaPsCalib cudaPsCalib.o cdpBitonicSort.o
+	rm -f cudaPsCalib cudaPsCalib.o
 	rm -rf ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/cudaPsCalib
 
 clobber: clean
