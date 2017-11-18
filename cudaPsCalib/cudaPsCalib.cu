@@ -1,483 +1,244 @@
-/*
-Advance quicksort (from nvidia sample code cuda 8.0)
-1. A small-set insertion sort. We do this on any set with <=32 elements
-2. A partitioning kernel, which - given a pivot - separates an input
-   array into elements <=pivot, and > pivot. Two quicksorts will then
-   be launched to resolve each of these.
-3. A quicksort co-ordinator, which figures out what kernels to launch
-   and when.
-*/
-#include <thrust/random.h>
-#include <thrust/device_vector.h>
-#include <cooperative_groups.h>
+#include <stdio.h>
+#include <cuda_profiler_api.h>
+#include <unistd.h>
 
-namespace cg = cooperative_groups;
+#include <sys/time.h>
+#include <iostream>
+#include <iomanip>
+using namespace std;
 
-#include "helper_cuda.h"
-#include "helper_string.h"
-#include "cdpQuicksort.h"
+#define N_PIXELS 2296960
+#define SECTOR_SIZE 71780
+#define MAX_QUADS 4
+#define MAX_SECTORS 8
+#define THREADS 256
 
-/* -- Inline PTX call to return index of highest non-zero bit in a word -- */
-static __device__ __forceinline__ unsigned int __qsflo(unsigned int word)
+// Convenience function for checking CUDA runtime API results
+// can be wrapped around any runtime API call. No-op in release builds.
+inline
+cudaError_t checkCuda(cudaError_t result)
 {
-  unsigned int ret;
-  asm volatile("bfind.u32 %0, %1;" : "=r"(ret) : "r"(word));
-  return ret;
+#if defined(DEBUG) || defined(_DEBUG)
+  if (result != cudaSuccess) {
+    fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+    assert(result == cudaSuccess);
+  }
+#endif
+  return result;
 }
 
-/*-- ringbufAlloc
-   Allocates from a ringbuffer. Allows for not failing when we run out
-   of stack for tracking the offset counts for each sort subsection.
-   
-   We use the atomicMax trick to allow out-of-order retirement. If we
-   hit the size limit on the ringbuffer, then we spin-wait for people
-   to complete.
-*/
-template< typename T >
-static __device__ T *ringbufAlloc(qsortRingbuf *ringbuf)
+__global__ void kernel(short *a, int offset, short *dark, int *blockSum)
 {
-  // Wait for there to be space in the ring buffer. We'll retry only a fixed
-  // number of times and then fail, to avoid an out-of-memory deadlock.
-  unsigned int loop = 10000;
-
-  while (((ringbuf->head - ringbuf->tail) >= ringbuf->stacksize) && (loop-- > 0));
-
-  if (loop == 0)
-    return NULL;
-
-  // Note that element includes a little index book-keeping, for freeing later.
-  unsigned int index = atomicAdd((unsigned int *) &ringbuf->head, 1);
-  T *ret = (T *)(ringbuf->stackbase) + (index & (ringbuf->stacksize-1));
-  ret->index = index;
-
-  return ret;
-}
-
-/*-- ringbufFree
-  Releases an element from the ring buffer. If every element is released
-  up to and including this one, we can advance the tail to indicate that
-  space is now available.
-*/
-template< typename T >
-static __device__ void ringbufFree(qsortRingbuf *ringbuf, T *data)
-{
-  unsigned int index = data->index;  // Non-wrapped index to free
-  unsigned int count = atomicAdd((unsigned int *)&(ringbuf->count), 1) + 1;
-  unsigned int max = atomicMax((unsigned int *)&(ringbuf->max), index + 1);
-
-  // Update the tail if need be. Note we update "max" to be the new value in ringbuf->max
-  if (max < (index+1)) max = index + 1;
-
-  if (max == count)
-    atomicMax((unsigned int *)&(ringbuf->tail), count);
-}
-
-/*-- qsort_warp
-  Simplest possible implementation, does a per-warp quicksort with no inter-warp
-  communication. This has a high atomic issue rate, but the rest should actually
-  be fairly quick because of low work per thread.
-
-  A warp finds its section of the data, then writes all data <pivot to one
-  buffer and all data >pivot to the other. Atomics are used to get a unique
-  section of the buffer.
-
-  Obvious optimisation: do multiple chunks per warp, to increase in-flight loads
-  and cover the instruction overhead.
-*/
-__global__ void qsort_warp(unsigned *indata,
-                           unsigned *outdata,
-                           unsigned int offset,
-                           unsigned int len,
-                           qsortAtomicData *atomicData,
-                           qsortRingbuf *atomicDataStack,
-                           unsigned int source_is_indata,
-                           unsigned int depth)
-{
-  // New in CUDA 9.0. Handle to thread block group
-  cg::thread_block cta = cg::this_thread_block(); 
-  // Find my data offset, based on warp ID
-  unsigned int thread_id = threadIdx.x + (blockIdx.x << QSORT_BLOCKSIZE_SHIFT);
-  // unsigned int warp_id = threadIdx.x >> 5; // Used for debug only
-  unsigned int lane_id = threadIdx.x & (warpSize-1);
-
-  // Exit if I"m outside the range of sort to be done
-  if (thread_id >= len)
-    return;
-
-  //
-  // First part of the algorithm. Each warp counts the number of elements that are
-  // greater/less than the pivot.
-  //
-  // When a warp knows its count, it updates an atomic counter.
-  //
-
-  // Read in the data and the pivot. Arbitary pivot selection for now.
-  unsigned pivot = indata[offset + len/2];
-  unsigned data = indata[offset + thread_id];
-
-  // Count how many are <= and how many are > pivot.
-  // If all are <= pivot then we adjust the comparison
-  // because otherwise the sort will move nothing and
-  // we'll iterate forever.
-  cg::coalesced_group active = cg::coalesced_threads();
-  unsigned int greater = (data > pivot);
-  unsigned int gt_mask = active.ballot(greater);
-
-  if (gt_mask == 0)
-  {
-    greater = (data >= pivot);
-    gt_mask = active.ballot(greater); //Must re-ballot for adjusted compartor
-  }
-
-  unsigned int lt_mask = active.ballot(!greater);
-  unsigned int gt_count = __popc(gt_mask);
-  unsigned int lt_count = __popc(lt_mask);
-
-  // Atomically adjust the lt_ and gt_offsets by this amount. Only one thread need do this.
-  // Share the result using shfl
-  unsigned int lt_offset, gt_offset;
-
-  if (lane_id == 0)
-  {
-    if (lt_count > 0)
-      lt_offset = atomicAdd((unsigned int *) &atomicData->lt_offset, lt_count);
-
-    if (gt_count > 0)
-      gt_offset = len - (atomicAdd((unsigned int *) &atomicData->gt_offset, gt_count) + gt_count);
-  }
-
-  lt_offset = active.shfl((int)lt_offset, 0); //Everyone pulls the offsets from lane 0
-  gt_offset = active.shfl((int)gt_offset, 0);
-
-  // Now compute my own personal offset within this. I need to know how many
-  // threads with a land ID less than mine are going to write to the same buffer
-  // as me. We can use popc to implement a single-operation warp scan in this case.
-  unsigned lane_mask_lt;
-  asm("mov.u32 %0, %%lanemask_lt;" : "=r"(lane_mask_lt));
-  unsigned int my_mask = greater ? gt_mask : lt_mask;
-  unsigned int my_offset = __popc(my_mask & lane_mask_lt);
-
-  // Move data.
-  my_offset += greater ? gt_offset : lt_offset;
-  outdata[offset + my_offset] = data;
-
-  // Count up if we're the last warp in. If so, then Kepler will launch the next
-  // set of sorts directly from here.
-  if (lane_id == 0)
-  {
-    // Count "elements written". If I wrote the last one, then trigger the next qsorts
-    unsigned int mycount = lt_count + gt_count;
-
-    if (atomicAdd((unsigned int *) &atomicData->sorted_count, mycount) + mycount == len)
-    {
-      // We're the last warp to do any sorting. Therefore it's up to us to launch the next stage.
-      unsigned int lt_len = atomicData->lt_offset;
-      unsigned int gt_len = atomicData->gt_offset;
-
-      cudaStream_t lstream, rstream;
-      cudaStreamCreateWithFlags(&lstream, cudaStreamNonBlocking);
-      cudaStreamCreateWithFlags(&rstream, cudaStreamNonBlocking);
-
-      // Begin by freeing our atomicData storage. It's better for the ringbuffer algorithm
-      // if we free when we're done, rather than re-using (makes for less fragmentation).
-      ringbufFree<qsortAtomicData>(atomicDataStack, atomicData);
-
-      // Exceptional case: if "lt_len" is zero, then all values in the batch
-      // are equal. We are then done (may need to copy into correct buffer, though)
-      if (lt_len == 0)
-      {
-        if (source_is_indata)
-          cudaMemcpyAsync(indata+offset, outdata+offset, gt_len*sizeof(unsigned), cudaMemcpyDeviceToDevice, lstream);
-        return;
-      }
-
-      // Start with lower half first
-      if (lt_len > BITONICSORT_LEN)
-      {
-        // If we've exceeded maximum depth, fall through to backup big_bitonicsort
-        if (depth >= QSORT_MAXDEPTH)
-        {
-          // The final bitonic stage sorts in-place in "outdata". We therefore
-          // re-use "indata" as the out-of-range tracking buffer. For (2^n)+1
-          // elements we need (2^(n+1)) bytes of our buffer. The backup qsort
-          // buffer is at least this large when sizeof(QTYPE) >= 2.
-          big_bitonicsort<<< 1, BITONICSORT_LEN, 0, lstream >>>(outdata, source_is_indata ? indata : outdata, indata, offset, lt_len);
-        }
-        else
-        {
-          // Launch another quicksort. We need to allocate more storage for the atmoic data.
-          if ((atomicData = ringbufAlloc<qsortAtomicData>(atomicDataStack)) == NULL)
-            printf("Stack-allocation error. Failing left child launch.\n");
-          else
-          {
-            atomicData->lt_offset = atomicData->gt_offset = atomicData->sorted_count = 0;
-            unsigned int numblocks = (unsigned int)(lt_len+(QSORT_BLOCKSIZE-1)) >> QSORT_BLOCKSIZE_SHIFT;
-            qsort_warp<<< numblocks, QSORT_BLOCKSIZE, 0, lstream >>>(outdata, indata, offset, lt_len, atomicData, atomicDataStack, !source_is_indata, depth+1);
-          }
-        }
-      }
-      else if (lt_len > 1)
-      {
-        // Final stage uses a bitonic sort instead. It's important to
-        // make sure the final stage ends up in the correct (original) buffer.
-        // We launch the smallest power-of-2 number of threads that we can.
-        unsigned int bitonic_len = 1 << (__qsflo(lt_len-1)+1);
-        bitonicsort<<< 1, bitonic_len, 0, lstream >>>(outdata, source_is_indata ? indata : outdata, offset, lt_len);
-      }
-      // Finally, if we sorted just one single element, we must stil make
-      // sure that it winds up in the correct place.
-      else if (source_is_indata && (lt_len == 1))
-        indata[offset] = outdata[offset];
-
-      if (cudaPeekAtLastError() != cudaSuccess)
-        printf("Left-side launch fail: %s\n", cudaGetErrorString(cudaGetLastError()));
-
-
-      // Now the upper half.
-      if (gt_len > BITONICSORT_LEN)
-      {
-        // If we've exceeded maximum depth, fall through to backup big_bitonicsort
-        if (depth >= QSORT_MAXDEPTH)
-          big_bitonicsort<<< 1, BITONICSORT_LEN, 0, rstream >>>(outdata, source_is_indata ? indata : outdata, indata, offset+lt_len, gt_len);
-        else
-        {
-          // Allocate new atomic storage for this launch
-          if ((atomicData = ringbufAlloc<qsortAtomicData>(atomicDataStack)) == NULL)
-            printf("Stack allocation error! Failing right-side launch.\n");
-          else
-          {
-            atomicData->lt_offset = atomicData->gt_offset = atomicData->sorted_count = 0;
-            unsigned int numblocks = (unsigned int)(gt_len+(QSORT_BLOCKSIZE-1)) >> QSORT_BLOCKSIZE_SHIFT;
-            qsort_warp<<< numblocks, QSORT_BLOCKSIZE, 0, rstream >>>(outdata, indata, offset+lt_len, gt_len, atomicData, atomicDataStack, !source_is_indata, depth+1);
-          }
-        }
-      }
-      else if (gt_len > 1)
-      {
-        unsigned int bitonic_len = 1 << (__qsflo(gt_len-1U)+1);
-        bitonicsort<<< 1, bitonic_len, 0, rstream >>>(outdata, source_is_indata ? indata : outdata, offset+lt_len, gt_len);
-      }
-      else if (source_is_indata && (gt_len == 1))
-        indata[offset+lt_len] = outdata[offset+lt_len];
-
-      if (cudaPeekAtLastError() != cudaSuccess)
-        printf("Right-side launch fail: %s\n", cudaGetErrorString(cudaGetLastError()));
-    }
-  }
-}
-
-/*-- run_quicksort
-  Host-side code to run the Kepler version of quicksort. It's pretty
-  simple, because all launch control is handled on the device via CDP.
-
-  All parallel quicksorts require an equal-sized scratch buffer. This 
-  must be passed in a ahead of time.
-
-  Returns the time elapsed for the sort.
-*/
-float run_quicksort_cdp(unsigned *gpudata, unsigned *scratchdata, unsigned int count, cudaStream_t stream)
-{
-  unsigned int stacksize = QSORT_STACK_ELEMS;
-
-  // This is the stack, for atomic tracking of each sort's status
-  qsortAtomicData *gpustack;
-  checkCudaErrors(cudaMalloc((void **)&gpustack, stacksize * sizeof(qsortAtomicData)));
-  checkCudaErrors(cudaMemset(gpustack, 0, sizeof(qsortAtomicData))); // Only need set first entry to 0
-
-  // Create the memory ringbuffer used for handling the stack.
-  // Initialise everything to where it needs to be.
-  qsortRingbuf buf;
-  qsortRingbuf *ringbuf;
-  checkCudaErrors(cudaMalloc((void **)&ringbuf, sizeof(qsortRingbuf)));
-  buf.head = 1;  // We start with one allocation
-  buf.tail = 0;
-  buf.count = 0;
-  buf.max = 0;
-  buf.stacksize = stacksize;
-  buf.stackbase = gpustack;
-  checkCudaErrors(cudaMemcpy(ringbuf, &buf, sizeof(buf), cudaMemcpyHostToDevice));
-
-  // Timing events ...
-  cudaEvent_t ev1, ev2;
-  checkCudaErrors(cudaEventCreate(&ev1));
-  checkCudaErrors(cudaEventCreate(&ev2));
-  checkCudaErrors(cudaEventRecord(ev1));
-
-  // Now we trivially launch the qsort kernel
-  if (count > BITONICSORT_LEN)
-  {
-    unsigned int numblocks = (unsigned int)(count+(QSORT_BLOCKSIZE-1)) >> QSORT_BLOCKSIZE_SHIFT;
-    qsort_warp<<< numblocks, QSORT_BLOCKSIZE, 0, stream >>>(gpudata, scratchdata, 0U, count, gpustack, ringbuf, true, 0);
-  }
-  else
-  {
-    bitonicsort<<< 1, BITONICSORT_LEN >>>(gpudata, gpudata, 0, count);
-  }
-
-  checkCudaErrors(cudaGetLastError());
-  checkCudaErrors(cudaEventRecord(ev2));
-  checkCudaErrors(cudaDeviceSynchronize());
-
-  float elapse=0.0f;
-
-  if (cudaPeekAtLastError() != cudaSuccess)
-    printf("Launch failure: %s\n", cudaGetErrorString(cudaGetLastError()));
-  else
-    checkCudaErrors(cudaEventElapsedTime(&elapse, ev1, ev2));
-
-  // Sanity check that the stack allocator is doing the right thing
-  checkCudaErrors(cudaMemcpy(&buf, ringbuf, sizeof(*ringbuf), cudaMemcpyDeviceToHost));
-
-  if (count > BITONICSORT_LEN && buf.head != buf.tail)
-  {
-    printf("Stack allocation error!\nRingbuf:\n");
-    printf("\t head = %u\n", buf.head);
-    printf("\t tail = %u\n", buf.tail);
-    printf("\tcount = %u\n", buf.count);
-    printf("\t  max = %u\b", buf.max);
-  }
-
-  // Release our stack data once we're done
-  checkCudaErrors(cudaFree(ringbuf));
-  checkCudaErrors(cudaFree(gpustack));
-
-  return elapse;
-}
-
-int run_qsort(unsigned int size, int seed, int debug, int loop, int verbose)
-{
-  if (seed > 0)
-    srand(seed);
-
-  // Create and set up our test
-  unsigned *gpudata, *scratchdata;
-  checkCudaErrors(cudaMalloc((void **)&gpudata, size*sizeof(unsigned)));
-  checkCudaErrors(cudaMalloc((void **)&scratchdata, size*sizeof(unsigned)));
-
-  // Create CPU data.
-  unsigned *data = new unsigned[size];
-  unsigned int min = loop ? loop : size;
-  unsigned int max = size;
-  loop = (loop == 0) ? 1 : loop;
-
-  for (size=min; size<=max; size+=loop)
-  {
-    if (verbose)
-      printf("  Input: ");
-
-    for (unsigned int i=0; i<size; i++)
-    {
-      // Build data 8 bits at a time
-      data[i] = 0;
-      char *ptr = (char *)&(data[i]);
-
-      for (unsigned j=0; j<sizeof(unsigned); j++)
-      {
-        // Easy-to-read data in debug mode
-        if (debug)
-        {
-          *ptr++ = (char)(rand() % 10);
-          break;
-        }
-
-        *ptr++ = (char)(rand() & 255);
-      }
-
-      if (verbose)
-      {
-        if (i && !(i%32))
-          printf("\n        ");
-
-        printf("%u ", data[i]);
-      }
-    }
-
-    if (verbose)
-      printf("\n");
-
-    checkCudaErrors(cudaMemcpy(gpudata, data, size*sizeof(unsigned), cudaMemcpyHostToDevice));
-
-    // So we're now populated and ready to go! We size our launch as
-    // blocks of up to BLOCKSIZE threads, and appropriate grid size.
-    float elapse;
-    elapse = run_quicksort_cdp(gpudata, scratchdata, size, NULL);
-
-    checkCudaErrors(cudaDeviceSynchronize());
-
-    // Copy back the data and verify correct sort
-    checkCudaErrors(cudaMemcpy(data, gpudata, size*sizeof(unsigned), cudaMemcpyDeviceToHost));
-
-    if (verbose)
-    {
-      printf("Output: ");
-
-      for (unsigned int i=0; i<size; i++)
-      {
-        if (i && !(i%32)) printf("\n       ");
-        printf("%u ", data[i]);
-      }
-
-      printf("\n");
-
-    }
-
-    unsigned int check;
-
-    for (check=1; check<size; check++)
-    {
-      if (data[check] < data[check-1])
-      {
-        printf("FAILED at element: %d\n", check);
-        break;
-      }
-    }
-
-    if (check != size)
-    {
-      printf("    cdpAdvancedQuicksort FAILED\n");
-      exit(EXIT_FAILURE);
-    }
-    else
-      printf("    cdpAdvancedQuciksort PASSSED\n");
-
-    // Display the time between event recordings
-    printf("Sorted %u elems in %.3f ms (%.3f Melems/sec)\n", size, elapse, (float)size/(elapse*1000.0f));
-    fflush(stdout);
+  int tid = threadIdx.x + blockIdx.x * blockDim.x;
+  int i = offset + tid;
+  int iDark = i % N_PIXELS;
+  a[i] = 1;
+  
+  // calculate sum per block
+  __shared__ int partials[THREADS];
+  partials[threadIdx.x] = a[i];
+  __syncthreads();
+
+  int j = blockDim.x / 2;
+  while (j != 0) {
+    if (threadIdx.x < j)
+      partials[threadIdx.x] += partials[threadIdx.x + j];
+    __syncthreads();
+    j /= 2; 
   }
   
-  // Release everything and we're done
-  checkCudaErrors(cudaFree(scratchdata));
-  checkCudaErrors(cudaFree(gpudata));
-  delete(data);
+  int iBlock = floor( (double) i / blockDim.x );
+  blockSum[iBlock] = partials[0];
+  //atomicAdd(&blockSum[iBlock], a[i]);
+}
+
+__global__ void common_mode(int *blockSum, int offset, int *sectorSum)
+{
+  int i = offset + threadIdx.x + blockIdx.x * blockDim.x;
+
+  // calculate sector sum
+  int iSector = floor( (double) i / blockDim.x );
+  atomicAdd(&sectorSum[iSector], blockSum[i]);
+}
+
+__global__ void common_mode_apply(short *a, int offset, int *sectorSum)
+{
+  int i = offset + threadIdx.x + blockIdx.x*blockDim.x;
+  int iSector = floor( (double) i / SECTOR_SIZE );
+  a[i] = a[i] - (sectorSum[iSector] / SECTOR_SIZE);
+}
+
+/* ---------------------- host code -----------------------------*/
+void fill( short *p, int n, int val ) {
+  for(int i = 0; i < n; i++){
+    p[i] = val;
+  }
+}
+
+float maxError(short *a, int n)
+{
+  float maxE = 0;
+  for (int i = 0; i < n; i++) {
+    float error = fabs(a[i]-1.0f);
+    if (error > maxE) maxE = error;
+  }
+  return maxE;
+}
+
+void host_calc(short *a, short *dark, int *sectorSum, int n) {
+  // host calculation
+  struct timeval start, end;
+
+  long seconds, useconds;
+  double mtime;
+
+  gettimeofday(&start, NULL);
+  
+  // dark subtraction
+  for(int i=0; i<n; i++)
+    a[i] -= dark[i];
+
+  // common mode
+  for(int i=0; i < MAX_QUADS * MAX_SECTORS; i++) {
+    int offset = i * SECTOR_SIZE;
+    for(int j=0; j< SECTOR_SIZE; j++) {
+      sectorSum[i] += a[offset + j];
+    }
+  }
+  for(int i=0; i < n; i++) {
+    int iSector = floor(i / SECTOR_SIZE);
+    a[i] -= sectorSum[iSector] / SECTOR_SIZE;
+  }
+
+  gettimeofday(&end, NULL);
+
+  seconds  = end.tv_sec  - start.tv_sec;
+  useconds = end.tv_usec - start.tv_usec;
+  mtime = ((seconds) * 1000000 + useconds)/1000.0;// + 0.5;
+
+  cout << "Host calculation took "<< mtime <<" ms for 1 event."<< endl;
+}
+
+int main(int argc, char **argv)
+{
+  const int maxQuads = 4, maxSectors = 8;
+  const int nColumns = 185, nRows = 388;
+  const int nPixels = nColumns * nRows * maxSectors * maxQuads;
+  const int nEvents = atoi(argv[1]);
+  const int n = nPixels * nEvents;
+
+  int nStreams = 32;
+  if (argc > 2) nStreams = atoi(argv[2]);
+  const int streamSize = n / nStreams;
+  const int streamBytes = streamSize * sizeof(short);
+  
+  const int bytes = n * sizeof(short);
+  
+  const int darkBytes = nPixels * sizeof(short);
+  
+  const int blockSize = 256;
+  const int nBlocks = n / blockSize;
+  const int blockSumBytes = nBlocks * sizeof(int);
+  
+  const int nSectors = nBlocks / nRows;   
+  const int sectorSumBytes = nSectors * sizeof(int);
+
+  printf("Running with nStreams: %d streamSize: %d\n", nStreams, streamSize);
+  int gridSize = streamSize / blockSize;
+  printf("blockSize: %d gridSize: %d\n", blockSize, gridSize);
+  
+  int devId = 0;
+  if (argc > 3) devId = atoi(argv[3]);
+  
+  cudaDeviceProp prop;
+  checkCuda( cudaGetDeviceProperties(&prop, devId));
+  printf("Device : %s\n", prop.name);
+  checkCuda( cudaSetDevice(devId) );
+
+  // allocate pinned host memory and device memory
+  short *a, *d_a; // data
+  checkCuda( cudaMallocHost((void**)&a, bytes) ); // host pinned
+  checkCuda( cudaMalloc((void**)&d_a, bytes) ); // device  
+  
+  short *dark, *d_dark; // dark
+  checkCuda( cudaMallocHost((void**)&dark, darkBytes) ); 
+  checkCuda( cudaMalloc((void**)&d_dark, darkBytes) ); 
+  
+  int *d_blockSum, *blockSum; // sum of each block
+  checkCuda( cudaMalloc((void**)&d_blockSum, blockSumBytes) ); 
+  checkCuda( cudaMallocHost((void**)&blockSum, blockSumBytes) );
+  cudaMemset(d_blockSum, 0, blockSumBytes);
+  
+  int *d_sectorSum, *sectorSum; // sum of each sector
+  checkCuda( cudaMalloc((void**)&d_sectorSum, sectorSumBytes) );
+  checkCuda( cudaMallocHost((void**)&sectorSum, sectorSumBytes) );
+  cudaMemset(d_sectorSum, 0, sectorSumBytes);
+  
+  // prepare raw and dark data
+  fill(a, n, 2);
+  fill(dark, nPixels, 1);
+  memset(sectorSum, 0, sectorSumBytes);
+  memset(blockSum, 0, blockSumBytes);
+
+  printf("Input values (Data): %d %d %d...%d %d %d\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  printf("Input values (Dark): %d %d %d...%d %d %d\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
+  
+  // host calculation
+  //host_calc(a, dark, sectorSum, nPixels);
+
+  // serial copy for one dark 
+  checkCuda( cudaMemcpy(d_dark, dark, darkBytes, cudaMemcpyHostToDevice) );
+
+  float ms; // elapsed time in milliseconds
+
+  // create events and streams
+  cudaEvent_t startEvent, stopEvent, dummyEvent;
+  cudaStream_t stream[nStreams];
+  checkCuda( cudaEventCreate(&startEvent) );
+  checkCuda( cudaEventCreate(&stopEvent) );
+  checkCuda( cudaEventCreate(&dummyEvent) );
+  for (int i = 0; i < nStreams; ++i)
+    checkCuda( cudaStreamCreate(&stream[i]) );
+
+  // asynchronous version 1: loop over {copy, kernel, copy}
+  checkCuda( cudaEventRecord(startEvent, 0) );
+  cudaProfilerStart();
+  for (int i = 0; i < nStreams; ++i) {
+    int offset = i * streamSize;
+    int offsetSector = i * (streamSize / blockSize);
+    checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
+                               streamBytes, cudaMemcpyHostToDevice,
+                               stream[i]) );
+    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, d_blockSum);
+    //common_mode<<<nBlocks/(nStreams * nRows), nRows, 0, stream[i]>>>(d_blockSum, offsetSector, d_sectorSum); 
+    //common_mode_apply<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_sectorSum);
+    checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
+                               streamBytes, cudaMemcpyDeviceToHost,
+                               stream[i]) );
+  }
+  cudaProfilerStop(); 
+  checkCuda( cudaEventRecord(stopEvent, 0) );
+  checkCuda( cudaEventSynchronize(stopEvent) );
+  checkCuda( cudaEventElapsedTime(&ms, startEvent, stopEvent) );
+  printf("Time for asynchronous V1 transfer and execute (ms): %f\n", ms);
+  printf("  max error: %e\n", maxError(a, n));
+ 
+  /* 
+  cudaMemcpy(blockSum, d_blockSum, blockSumBytes, cudaMemcpyDeviceToHost);
+  for (int i = 0; i < nBlocks; i++)
+    printf("i=%d blockSum[i]=%d\n", i, blockSum[i]);
+  */
+
+  // cleanup
+  checkCuda( cudaEventDestroy(startEvent) );
+  checkCuda( cudaEventDestroy(stopEvent) );
+  checkCuda( cudaEventDestroy(dummyEvent) );
+  for (int i = 0; i < nStreams; ++i)
+    checkCuda( cudaStreamDestroy(stream[i]) );
+  cudaFree(d_a);
+  cudaFreeHost(a);
+  //cudaFree(d_dark);
+  //cudaFreeHost(dark);
+
   return 0;
 }
-
-int main(int argc, char *argv[])
-{
-  int size = 71780;
-  unsigned int seed = 100;
-  int debug = 0;
-  int loop = 0;
-  int verbose = 0;
-  
-  // Get device properties
-  int cuda_device = findCudaDevice(argc, (const char **)argv);
-  cudaDeviceProp properties;
-  checkCudaErrors(cudaGetDeviceProperties(&properties, cuda_device));
-  int cdpCapable = (properties.major == 3 && properties.minor >= 5) || properties.major >= 4;
-
-  printf("GPU device %s has compute capabilities (SM %d.%d)\n", properties.name, properties.major, properties.minor);
-
-  if (!cdpCapable)
-  {
-    printf("cdpAdvancedQuicksort requires SM 3.5 or higher to use CUDA Dynamic Parallelism. Exiting...\n");
-    exit(EXIT_WAIVED);
-  }
-
-  printf("Running qsort on %d elements with seed %d, on %s\n", size, seed, properties.name);
-
-  run_qsort(size, seed, debug, loop, verbose);
-
-  exit(EXIT_SUCCESS);
-}
-
