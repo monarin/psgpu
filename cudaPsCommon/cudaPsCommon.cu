@@ -12,6 +12,8 @@ using namespace std;
 #include <sstream>
 #include <fstream>
 
+#include "cudaPsCommon.h"
+
 #define N_PIXELS 2296960
 #define MAX_QUADS 4
 #define MAX_SECTORS 8
@@ -31,7 +33,14 @@ cudaError_t checkCuda(cudaError_t result)
   return result;
 }
 
-__global__ void kernel(float *a, int offset, float *dark, int streamSize, float *blockSum)
+__global__ void kernel(float *a, 
+                       int offset, 
+                       float *dark, 
+                       short *bad, 
+                       float cmmThr,
+                       int streamSize, 
+                       float *blockSum,
+                       int *cnBlockSum)
 {
   int idx = threadIdx.x + blockIdx.x*blockDim.x; // thread id
   
@@ -43,10 +52,32 @@ __global__ void kernel(float *a, int offset, float *dark, int streamSize, float 
     a[iData] -= dark[iDark];
 
     // calculate block sum
-    int iBlock = floor( (double) iData / blockDim.x );
-    atomicAdd(&blockSum[iBlock], a[iData]);
+    if ( bad[iDark] == 0 && a[iData] < cmmThr) {
+      int iBlock = floor( (double) iData / blockDim.x );
+      atomicAdd(&blockSum[iBlock], a[iData]);
+      atomicAdd(&cnBlockSum[iBlock], 1);
+    }
   }
 }
+
+__global__ void common_mode(float *blockSum, int *cnBlockSum, float *sectorSum, int *cnSectorSum, int offset)
+{
+  int i = offset + threadIdx.x + blockIdx.x * blockDim.x;
+
+  // calculate sector sum and sector count
+  int iSector = floor( (double) i / blockDim.x );
+  atomicAdd(&sectorSum[iSector], blockSum[i]);
+  atomicAdd(&cnSectorSum[iSector], cnBlockSum[i]);
+}
+
+__global__ void common_mode_apply(float *a, float *sectorSum, int *cnSectorSum, float *gain, int offset)
+{
+  int i = offset + threadIdx.x + blockIdx.x * blockDim.x;
+  int iGain = i % N_PIXELS;
+  int iSector = floor( (double) i / SECTOR_SIZE );
+  a[i] = ( a[i] - (sectorSum[iSector] / cnSectorSum[iSector]) ) * gain[iGain];
+}
+   
 
 /* ---------------------- host code -----------------------------*/
 void fill( float *p, int n, float val ) {
@@ -71,52 +102,7 @@ float maxError(float *aCalc, float *aKnown, int nEvents, int nPixels)
   return maxE;
 }
 
-
-/* left is the index of the leftmost element of the subarray; right is one
- * past the index of the rightmost element */
-void merge_helper(float *input, int left, int right, float *scratch)
-{
-  /* base case: one element */
-  if (right == left + 1) {
-    
-    return;
-  } else {
-    
-    int i = 0;
-    int length = right - left;
-    int midpoint_distance = length / 2;
-    /* l and r are to the positions in the left and right subarrays */
-    int l = left, r = left + midpoint_distance;
-
-    /* sort each subarray */
-    merge_helper(input, left, left + midpoint_distance, scratch);
-    merge_helper(input, left + midpoint_distance, right, scratch);
-
-    /* merge the arrays together using scratch for temporary storage */
-    for (i = 0; i < length; i++) {
-      /* Check to see if any elements remain in the left array; if so,
-       * we check if there are any elements left in the right array; if
-       * so, we compare them. Otherwise, we know that the merge must
-       * take the element from the left array */
-      if (l < left + midpoint_distance &&
-          (r == right || max(input[l], input[r]) == input[l])) {
-        
-        scratch[i] = input[l];
-        l++;
-      } else {
-
-        scratch[i] = input[r];
-        r++;
-      }
-    }   
-    
-    /* Copy the sorted subarray back to the input */
-    for(i = left; i < right; i++) {
-      input[i] = scratch[i - left];
-    }
-  }
-}
-
+// used in host_calculation qsort function
 int compare (const void * a, const void * b)
 {
   float fa = *(const float*) a;
@@ -124,6 +110,7 @@ int compare (const void * a, const void * b)
   return (fa > fb) - (fa < fb);
 }
 
+// host-side calculation comparision
 void host_calc(float *a, float *dark, int nPixels, int cmmThr) {
   // host calculation
   struct timeval start, end;
@@ -151,14 +138,6 @@ void host_calc(float *a, float *dark, int nPixels, int cmmThr) {
 
     //printf("\n");
     //printf("s[0]=%6.2f, s[1]=%6.2f, s[2]=%6.2f\n", sector[0], sector[1], sector[2]);
-    /*
-    float *scratch = (float *)malloc(SECTOR_SIZE * sizeof(float));
-    if (scratch != NULL) {
-
-      merge_helper(sector, 0, SECTOR_SIZE, scratch);
-      free(scratch);
-      printf("%6.2f, %6.2f, %6.2f ... %6.2f, %6.2f, %6.2f\n", sector[0], sector[1], sector[2], sector[SECTOR_SIZE-3], sector[SECTOR_SIZE-2], sector[SECTOR_SIZE-1]); 
-    }*/
     
     qsort(sector, SECTOR_SIZE, sizeof(float), compare);
     //printf("%6.2f, %6.2f, %6.2f ... %6.2f, %6.2f, %6.2f\n", sector[0], sector[1], sector[2], sector[SECTOR_SIZE-3], sector[SECTOR_SIZE-2], sector[SECTOR_SIZE-1]);
@@ -180,7 +159,7 @@ void host_calc(float *a, float *dark, int nPixels, int cmmThr) {
       sectorMedian[i] = sector[foundPos/2];
     } 
     free(sector);
-    printf("sector: %d foundPos: %d med: %6.4f\n", i, foundPos, sectorMedian[i]); 
+    printf("sector: %d foundPos: %d med: %6.4f \n", i, foundPos, sectorMedian[i]); 
     
   }
 
@@ -201,14 +180,15 @@ void host_calc(float *a, float *dark, int nPixels, int cmmThr) {
 
 int main(int argc, char **argv)
 {
-  const int nPixels = N_PIXELS;			// no. of pixels per image
-  const int nEvents = atoi(argv[1]);			// no. of events
-  const int n = nPixels * nEvents;			// total number of pixels
+  const int nPixels = N_PIXELS;			              // no. of pixels per image
+  const int nRows = 388;                          // no. of rows in a sector
+  const int nEvents = atoi(argv[1]);			        // no. of events
+  const int n = nPixels * nEvents;			          // total number of pixels
   
-  const int nStreams = atoi(argv[2]);			// no. of stream
-  const int blockSize = atoi(argv[3]);                  // block size (max is 1024)
+  const int nStreams = atoi(argv[2]);			        // no. of stream
+  const int blockSize = atoi(argv[3]);            // block size (max is 1024)
 
-  const int bytes = n * sizeof(float);			// total size (bytes)
+  const int bytes = n * sizeof(float);			      // total size (bytes)
   const int darkBytes = nPixels * sizeof(float);	// dark size (bytes)A
 
   const int nBlocks = ceil( (double) n / blockSize );
@@ -217,7 +197,7 @@ int main(int argc, char **argv)
   const int nSectors = MAX_QUADS * MAX_SECTORS * nEvents;
   const int sectorSumBytes = nSectors * sizeof(float);
 
-  const int cmmThr = 10;
+  const float cmmThr = 100.0f;
   
   int devId = 0;
   if (argc > 4) devId = atoi(argv[4]);			// device ID (optional)
@@ -230,26 +210,30 @@ int main(int argc, char **argv)
 
   // allocate pinned host memory and device memory
   // RAW * nEVents
-  float *a, *d_a; 						// data address
+  float *a, *d_a; 						
   checkCuda( cudaMallocHost((void**)&a, bytes) ); 		// host pinned
   checkCuda( cudaMalloc((void**)&d_a, bytes) ); 		// device
   // SINGLE RAW
-  float *raw;                                               // data address
+  float *raw;                                               
   checkCuda( cudaMallocHost((void**)&raw, darkBytes) );     // host pinned
   // RAW-PEDESTAL
-  float *pedCorrected, *d_pedCorrected; 			// data address
+  float *pedCorrected, *d_pedCorrected; 			
   checkCuda( cudaMallocHost((void**)&pedCorrected, darkBytes) ); // host pinned
   checkCuda( cudaMalloc((void**)&d_pedCorrected, darkBytes) ); 	// device  
   // PEDESTAL
-  float *dark, *d_dark;					 	// dark address
+  float *dark, *d_dark;					 
   checkCuda( cudaMallocHost((void**)&dark, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_dark, darkBytes) );		// device
   // PER-PIXEL GAIN
-  float *gain, *d_gain;					 	// dark address
+  float *gain, *d_gain;					 	
   checkCuda( cudaMallocHost((void**)&gain, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_gain, darkBytes) );		// device
+  // BAD PIXEL FLAGS
+  short *bad, *d_bad;           
+  checkCuda( cudaMallocHost((void**)&bad, nPixels * sizeof(short)) );  // host pinned
+  checkCuda( cudaMalloc((void**)&d_bad, nPixels * sizeof(short)) );    // device
   // RAW-PEDESTAL
-  float *calib, *d_calib;					 	// dark address
+  float *calib, *d_calib;					 	
   checkCuda( cudaMallocHost((void**)&calib, darkBytes) ); 	// host pinned
   checkCuda( cudaMalloc((void**)&d_calib, darkBytes) );		// device  
   // Sum of each block
@@ -257,19 +241,24 @@ int main(int argc, char **argv)
   checkCuda( cudaMalloc((void**)&d_blockSum, blockSumBytes) );
   checkCuda( cudaMallocHost((void**)&blockSum, blockSumBytes) );
   cudaMemset(d_blockSum, 0, blockSumBytes);
+  int *d_cnBlockSum;
+  checkCuda( cudaMalloc((void**)&d_cnBlockSum, nBlocks * sizeof(int)) );
   // Sum of each sector
   float *d_sectorSum, *sectorSum; 
   checkCuda( cudaMalloc((void**)&d_sectorSum, sectorSumBytes) );
   checkCuda( cudaMallocHost((void**)&sectorSum, sectorSumBytes) );
   cudaMemset(d_sectorSum, 0, sectorSumBytes);
+  int * d_cnSectorSum;
+  checkCuda( cudaMalloc((void**)&d_cnSectorSum, nSectors * sizeof(int)) );
 
   
   //load the text file and put it into a single string:
-  ifstream inR("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_raw_95.txt");
-  ifstream inPC("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_pedCorrected_95.txt");
-  ifstream inP("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_pedestal_95.txt");
-  ifstream inG("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_gain_95.txt");
-  ifstream inC("/reg/data/ana14/cxi/cxitut13/res/yoon82/psgpu/profileBlockSize/cxid9114_calib_95.txt");
+  ifstream inR("/reg/neh/home/monarin/psgpu/data/cxid9114_raw_95.txt");
+  ifstream inPC("/reg/neh/home/monarin/psgpu/data/cxid9114_pedCorrected_95.txt");
+  ifstream inP("/reg/neh/home/monarin/psgpu/data/cxid9114_pedestal_95.txt");
+  ifstream inG("/reg/neh/home/monarin/psgpu/data/cxid9114_gain_95.txt");
+  ifstream inB("/reg/neh/home/monarin/psgpu/data/cxid9114_badpix_fake_95.txt");
+  ifstream inC("/reg/neh/home/monarin/psgpu/data/cxid9114_calib_95.txt");
   // Fill arrays from text files
   string line;
   for (unsigned int i=0; i<nPixels; i++){
@@ -286,24 +275,32 @@ int main(int argc, char **argv)
     dark[i] = atof(line.c_str());
     getline(inG, line);
     gain[i] = atof(line.c_str());
+    getline(inB, line);
+    bad[i] = atoi(line.c_str());
     getline(inC, line);
     calib[i] = atof(line.c_str());
   }
-
-  printf("Input values (Data): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
-  printf("Input values (Dark): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
+  puts("Input\n");
+  printf("Data       : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  printf("Dark       : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", dark[0], dark[1], dark[2], dark[nPixels-3], dark[nPixels-2], dark[nPixels-1]);
+  printf("Bad pixels : %d %d %d...%d %d %d\n", bad[0], bad[1], bad[2], bad[nPixels-3], bad[nPixels-2], bad[nPixels-1]);
+  printf("Pixel gain : %8.2f %8.2f %8.2f ... %8.2f %8.2f %8.2f\n", gain[0], gain[1], gain[2], gain[nPixels-3], gain[nPixels-2], gain[nPixels-1]);
+  
 
   // host calculation 
-  host_calc(raw, dark, nPixels, cmmThr);
+  /*host_calc(raw, dark, nPixels, cmmThr);
 
-  /*
+  
   printf("Host Calculation\n");
   printf("Input values (Data calc.): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", raw[0], raw[1], raw[2], raw[nPixels-3], raw[nPixels-2], raw[nPixels-1]);
   printf("Input values (Data known): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", calib[0], calib[1], calib[2], calib[nPixels-3], calib[nPixels-2], calib[nPixels-1]);
   printf("  max error: %e\n", maxError(raw, calib, 1, nPixels));
-
-  // serial copy for one dark to device 
+  */
+  // 
+  // serial copy for one dark, bad pixel mask, and pixel gain to device 
   checkCuda( cudaMemcpy(d_dark, dark, darkBytes, cudaMemcpyHostToDevice) );
+  checkCuda( cudaMemcpy(d_bad, bad, nPixels * sizeof(short), cudaMemcpyHostToDevice) );
+  checkCuda( cudaMemcpy(d_gain, gain, darkBytes, cudaMemcpyHostToDevice) );
 
   float ms; // elapsed time in milliseconds
 
@@ -322,6 +319,7 @@ int main(int argc, char **argv)
   for (int i = 0; i < nStreams; ++i) {
     int streamSize = ceil( (double) n / nStreams );  // stream size (pixels)
     int offset = i * streamSize;
+    int offsetSector = i * (streamSize / blockSize);
 
     // check if last stream has full length
     if ( (i + 1) * streamSize > n ) streamSize = n - (i * streamSize);
@@ -334,7 +332,9 @@ int main(int argc, char **argv)
     checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
                                streamBytes, cudaMemcpyHostToDevice,
                                stream[i]) );
-    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, streamSize, d_blockSum);
+    kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, d_bad, cmmThr, streamSize, d_blockSum, d_cnBlockSum);
+    common_mode<<<nBlocks/(nStreams * nRows), nRows, 0, stream[i]>>>(d_blockSum, d_cnBlockSum, d_sectorSum, d_cnSectorSum, offsetSector);
+    common_mode_apply<<<streamSize / blockSize, blockSize, 0, stream[i]>>>(d_a, d_sectorSum, d_cnSectorSum, d_gain, offset); 
     checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
                                streamBytes, cudaMemcpyDeviceToHost,
                                stream[i]) );
@@ -345,11 +345,13 @@ int main(int argc, char **argv)
   checkCuda( cudaEventElapsedTime(&ms, startEvent, stopEvent) );
   printf("GPU Calculation\n");
   printf("Time for asynchronous V1 transfer and execute (ms): %f\n", ms);
-  printf("Input values (Data calc.): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
-  printf("Input values (Data known): %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", pedCorrected[0], pedCorrected[1], pedCorrected[2], pedCorrected[nPixels-3], pedCorrected[nPixels-2], pedCorrected[nPixels-1]);
+  printf("Output               : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
+  printf("Known ped. corrected : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", pedCorrected[0], pedCorrected[1], pedCorrected[2], pedCorrected[nPixels-3], pedCorrected[nPixels-2], pedCorrected[nPixels-1]);
+  printf("Know calibrated      : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", calib[0], calib[1], calib[2],calib[nPixels-3], calib[nPixels-2], calib[nPixels-1]);
+  printf("Differces            : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0]-calib[0], a[1]-calib[1], a[2]-calib[2], a[n-3]-calib[nPixels-3], a[n-2]-calib[nPixels-2], a[n-1]-calib[nPixels-1]);
   printf("  max error: %e\n", maxError(a, pedCorrected, nEvents, nPixels));
      
-  //cudaMemcpy(blockSum, d_blockSum, blockSumBytes, cudaMemcpyDeviceToHost);
+  cudaMemcpy(blockSum, d_blockSum, blockSumBytes, cudaMemcpyDeviceToHost);
   //for (int i = 0; i < nBlocks; i++)
   //  printf("i=%d blockSum[i]=%10.2f\n", i, blockSum[i]);
   //
@@ -363,6 +365,6 @@ int main(int argc, char **argv)
   cudaFreeHost(a);
   cudaFree(d_dark);
   cudaFreeHost(dark);
-  */
+  
   return 0;
 }
