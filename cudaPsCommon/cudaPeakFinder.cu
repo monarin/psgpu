@@ -5,13 +5,14 @@
 /* ----------------------------- filterByThrHigh--------------------------------------------*/
 
 //
-// A patch is a 32 x 4 thread block. To work on a sector (388 * 185), you need 12 x 47
+// A patch is a 32 x 4 thread block. To work on a sector (388 * 185), you need 13 x 47
 // grid of patches. 
-__global__ void filterByThrHigh_v2(const float *d_data, uint *d_centers)
+__global__ void filterByThrHigh_v2(const float *d_data, uint *d_centers, int offset)
 {
   // index of this patch on a sector
-  uint sectorId = blockIdx.x / FILTER_PATCH_PER_SECTOR;
-  uint patch_id = blockIdx.x % FILTER_PATCH_PER_SECTOR;
+  uint myBlockIdx_x = blockIdx.x + offset;
+  uint sectorId = myBlockIdx_x / FILTER_PATCH_PER_SECTOR;
+  uint patch_id = myBlockIdx_x % FILTER_PATCH_PER_SECTOR;
   uint patch_x = patch_id % FILTER_PATCH_ON_WIDTH;
   uint patch_y = patch_id / FILTER_PATCH_ON_WIDTH;
   __shared__ float data[FILTER_THREADS_PER_PATCH];
@@ -33,6 +34,9 @@ __global__ void filterByThrHigh_v2(const float *d_data, uint *d_centers)
   int local_pos = local_area * (FILTER_PATCH_HEIGHT * FILTER_PATCH_HEIGHT) + 
                   irow * FILTER_PATCH_HEIGHT + 
                   icol % FILTER_PATCH_HEIGHT;
+
+  // since sectorId is calculated based on the filterPatchOffset
+  // this is then correct for all streams
   uint device_pos = sectorId * (WIDTH * HEIGHT) + row * WIDTH + col;
   
   __shared__ bool has_candidate[NUM_NMS_AREA];
@@ -174,10 +178,11 @@ __device__ __inline__ bool peakIsPreSelected(float son, float npix, float amp_ma
 
 //
 // floodFill algorithm 
-__global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d_peaks, uint *d_conmap)
+__global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d_peaks, uint *d_conmap, int offset, int nEvents)
 {
-  const uint center_id = d_centers[blockIdx.x];
-  const uint img_id = center_id / (WIDTH * HEIGHT);
+  uint myBlockIdx_x = offset + blockIdx.x;
+  const uint center_id = d_centers[myBlockIdx_x];
+  const uint sector_id = center_id / (WIDTH * HEIGHT);
   const uint crow = center_id / WIDTH % HEIGHT;
   const uint ccol = center_id % WIDTH;
   __shared__ float data[PATCH_WIDTH][PATCH_WIDTH];
@@ -198,7 +203,7 @@ __global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d
     // copy data (d-to-d_shared)
     if (drow >= 0 && drow < HEIGHT && dcol >= 0 && dcol < WIDTH)
     {
-      data[irow][icol] = d_data[img_id * (WIDTH * HEIGHT) + drow * WIDTH + dcol];
+      data[irow][icol] = d_data[sector_id * (WIDTH * HEIGHT) + drow * WIDTH + dcol];
     }
     else if(irow < PATCH_WIDTH)
     {
@@ -396,8 +401,8 @@ __global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d
                            * peak_col[id];}, deviceAdd);
 
   if (threadIdx.x == 0){
-    peak.evt = img_id / SHOTS;
-    peak.seg = img_id % SHOTS;
+    peak.evt = sector_id / nEvents;
+    peak.seg = sector_id % nEvents;
     peak.row = crow;
     peak.col = ccol;
     peak.npix = npix;
@@ -434,7 +439,7 @@ __global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d
     if (irow < PATCH_WIDTH && status[irow][icol] == center_id && drow >= 0 &&
         drow < HEIGHT && dcol >= 0 && dcol < WIDTH)
     {
-      d_conmap[img_id * (WIDTH * HEIGHT) + drow * WIDTH + dcol] = status[irow][icol];
+      d_conmap[sector_id * (WIDTH * HEIGHT) + drow * WIDTH + dcol] = status[irow][icol];
     }
   }
 }

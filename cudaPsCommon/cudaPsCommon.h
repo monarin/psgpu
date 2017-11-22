@@ -59,8 +59,7 @@ const int FILTER_THREADS_PER_PATCH = FILTER_PATCH_WIDTH * FILTER_PATCH_HEIGHT;
 const int FILTER_PATCH_ON_WIDTH = (WIDTH) / FILTER_PATCH_WIDTH;
 const int FILTER_PATCH_ON_HEIGHT = (HEIGHT + FILTER_PATCH_HEIGHT - 1) / FILTER_PATCH_HEIGHT;
 const int FILTER_PATCH_PER_SECTOR = FILTER_PATCH_ON_WIDTH * FILTER_PATCH_ON_HEIGHT;
-const int FILTER_PATCH_PER_IMAGE = FILTER_PATCH_ON_WIDTH * FILTER_PATCH_ON_HEIGHT;
 
 // exposed functions
-__global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d_peaks, uint *d_conmap);
-__global__ void filterByThrHigh_v2(const float *d_data, uint *d_centers);
+__global__ void floodFill_v2(const float *d_data, const uint *d_centers, Peak *d_peaks, uint *d_conmap, int offset, int nEvents);
+__global__ void filterByThrHigh_v2(const float *d_data, uint *d_centers, int offset);

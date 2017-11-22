@@ -250,10 +250,24 @@ int main(int argc, char **argv)
   cudaMemset(d_sectorSum, 0, sectorSumBytes);
   int * d_cnSectorSum;
   checkCuda( cudaMalloc((void**)&d_cnSectorSum, nSectors * sizeof(int)) );
+  // Peak centroids
+  const int nCenters = FILTER_PATCH_PER_SECTOR * (FILTER_PATCH_WIDTH / FILTER_PATCH_HEIGHT)
+                         * nSectors;
+  uint *d_centers, *centers;
+  checkCuda( cudaMalloc((void**)&d_centers, nCenters * sizeof(uint)) );
+  checkCuda( cudaMallocHost((void**)&centers, nCenters * sizeof(uint)) );
+  cudaMemset(d_centers, 0, nCenters * sizeof(uint));
+  // Peaks
+  int nPeaks = 640;
+  Peak *d_peaks = NULL;
+  checkCuda( (cudaMalloc((void**)&d_peaks, nPeaks * sizeof(Peak))) );
+  cudaMemset(d_peaks, 0, nPeaks * sizeof(Peak));
+  uint *d_conmap;
+  checkCuda( (cudaMalloc((void**)&d_conmap, n * sizeof(uint))) );
+  cudaMemset(d_conmap, 0, n * sizeof(uint));
 
-  
   //load the text file and put it into a single string:
-  ifstream inR("/reg/neh/home/monarin/psgpu/data/cxid9114_raw_95.txt");
+  ifstream inR("/reg/neh/home/monarin/psgpu/data/cxid9114_raw_95_hit01.txt");
   ifstream inPC("/reg/neh/home/monarin/psgpu/data/cxid9114_pedCorrected_95.txt");
   ifstream inP("/reg/neh/home/monarin/psgpu/data/cxid9114_pedestal_95.txt");
   ifstream inG("/reg/neh/home/monarin/psgpu/data/cxid9114_gain_95.txt");
@@ -320,6 +334,10 @@ int main(int argc, char **argv)
     int streamSize = ceil( (double) n / nStreams );  // stream size (pixels)
     int offset = i * streamSize;
     int offsetSector = i * (streamSize / blockSize);
+    int filterPatchStreamSize = FILTER_PATCH_PER_SECTOR * nEvents;
+    int offsetFilterPatch = i * filterPatchStreamSize;
+    int peakStreamSize = nPeaks / nStreams;
+    int offsetPeakStreamSize = i * peakStreamSize;
 
     // check if last stream has full length
     if ( (i + 1) * streamSize > n ) streamSize = n - (i * streamSize);
@@ -332,9 +350,17 @@ int main(int argc, char **argv)
     checkCuda( cudaMemcpyAsync(&d_a[offset], &a[offset],
                                streamBytes, cudaMemcpyHostToDevice,
                                stream[i]) );
+
+    // calibration kernels
     kernel<<<gridSize, blockSize, 0, stream[i]>>>(d_a, offset, d_dark, d_bad, cmmThr, streamSize, d_blockSum, d_cnBlockSum);
     common_mode<<<nBlocks/(nStreams * nRows), nRows, 0, stream[i]>>>(d_blockSum, d_cnBlockSum, d_sectorSum, d_cnSectorSum, offsetSector);
     common_mode_apply<<<streamSize / blockSize, blockSize, 0, stream[i]>>>(d_a, d_sectorSum, d_cnSectorSum, d_gain, offset); 
+
+    // peakFinder kernels
+    filterByThrHigh_v2<<<FILTER_PATCH_PER_SECTOR * nSectors / nStreams, FILTER_THREADS_PER_PATCH, 0, stream[i]>>>(d_a, d_centers, offsetFilterPatch);
+    floodFill_v2<<<nPeaks/nStreams, 64, 0, stream[i]>>>(d_a, d_centers, d_peaks, d_conmap, offsetPeakStreamSize, nEvents);
+
+    // copy data out
     checkCuda( cudaMemcpyAsync(&a[offset], &d_a[offset],
                                streamBytes, cudaMemcpyDeviceToHost,
                                stream[i]) );
@@ -348,12 +374,14 @@ int main(int argc, char **argv)
   printf("Output               : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0], a[1], a[2], a[n-3], a[n-2], a[n-1]);
   printf("Known ped. corrected : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", pedCorrected[0], pedCorrected[1], pedCorrected[2], pedCorrected[nPixels-3], pedCorrected[nPixels-2], pedCorrected[nPixels-1]);
   printf("Know calibrated      : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", calib[0], calib[1], calib[2],calib[nPixels-3], calib[nPixels-2], calib[nPixels-1]);
-  printf("Differces            : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0]-calib[0], a[1]-calib[1], a[2]-calib[2], a[n-3]-calib[nPixels-3], a[n-2]-calib[nPixels-2], a[n-1]-calib[nPixels-1]);
+  printf("Differences          : %8.2f %8.2f %8.2f...%8.2f %8.2f %8.2f\n", a[0]-calib[0], a[1]-calib[1], a[2]-calib[2], a[n-3]-calib[nPixels-3], a[n-2]-calib[nPixels-2], a[n-1]-calib[nPixels-1]);
   printf("  max error: %e\n", maxError(a, pedCorrected, nEvents, nPixels));
      
-  cudaMemcpy(blockSum, d_blockSum, blockSumBytes, cudaMemcpyDeviceToHost);
-  //for (int i = 0; i < nBlocks; i++)
-  //  printf("i=%d blockSum[i]=%10.2f\n", i, blockSum[i]);
+  /*cudaMemcpy(centers, d_centers, nCenters * sizeof(uint), cudaMemcpyDeviceToHost);
+  for (int i = 0; i < 500; i++) {
+    if (centers[i] > 0) 
+      printf("i=%d centers[i]=%d\n", i, centers[i]);
+  }*/
   //
   // cleanup
   checkCuda( cudaEventDestroy(startEvent) );
